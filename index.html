@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.9.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.9.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -97,6 +97,7 @@ function questRoundType(round){
 const TEST_ALL_LEVELS=true; // Temporary playtesting shortcut.
 const DYNAMIC_QUESTS=Object.freeze({
  '01':Object.freeze({skill:'movement',generator:'movement-basic',rounds:QUEST_ROUND_TYPES}),
+ '02':Object.freeze({skill:'movement',generator:'word-runner',rounds:QUEST_ROUND_TYPES}),
  '03':Object.freeze({skill:'movement',generator:'movement-edges',rounds:QUEST_ROUND_TYPES}),
  '04':Object.freeze({skill:'movement',generator:'movement-warp',rounds:QUEST_ROUND_TYPES}),
  '15':Object.freeze({skill:'search',generator:'search-hunter',rounds:QUEST_ROUND_TYPES}),
@@ -118,6 +119,7 @@ function createDynamicQuest(config,seed){
  if(config.generator==='character-delete'){
   return config.rounds.map((type,round)=>generateCharacterDeleteRound(seed,round));
  }
+ if(config.generator==='word-runner')return generateWordRunnerRounds(seed);
  if(['movement-basic','movement-edges','movement-warp','search-hunter','find-target','final-boss'].includes(config.generator))return config.rounds.map((_,round)=>generateNavigationRound(config.generator,seed,round));
  if(config.generator==='copy-paste'||config.generator==='undo')return config.rounds.map((_,round)=>generateUtilityRound(config.generator,seed,round));
  if(config.generator==='word-delete'||config.generator==='line-delete')return config.rounds.map((_,round)=>generateDynamicDeleteRound(config.generator,seed,round));
@@ -285,12 +287,27 @@ function questShuffle(seed,kind,round){
 }
 function generateWordRunnerRounds(seed){
  const paths=[
- [[1,'first'],[2,'last'],[3,'first'],[4,'last']],
- [[2,'last'],[0,'first'],[3,'last'],[1,'first']],
- [[3,'first'],[4,'last'],[1,'first'],[2,'last']],
- [[4,'first'],[1,'last'],[3,'first'],[0,'last']]
+  [[1,'first']],
+  [[2,'last']],
+  [[1,'first'],[3,'last']],
+  [[4,'first'],[2,'last'],[1,'first'],[3,'last']]
  ];
- return paths.map((goals,round)=>({words:questShuffle(seed,'word-runner',round).slice(0,5),goals,rule:round===2?'Gebruik w, b en e; h, j, k en l zijn verboden.':'Gebruik Vim-bewegingen om de woordgrenzen te vinden.',forbidden:round===2?['h','j','k','l']:[]}));
+ return paths.map((path,round)=>{
+  const phase=questRoundType(round),words=questShuffle(seed,'word-runner',round).slice(0,5);
+  const line=words.join(' ');
+  const waypoints=path.map(([word,edge])=>{
+   const column=words.slice(0,word).reduce((n,w)=>n+w.length+1,0)+(edge==='last'?words[word].length-1:0);
+   return {position:[0,column],description:(edge==='first'?'eerste':'laatste')+' letter van '+words[word]};
+  });
+  const ex={
+   generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:'movement',difficulty:phase.difficulty,
+   round,roundType:phase.id,lines:[line],expected:[line],start:[0,0],requiredMode:'normal',
+   waypoints,goal:'Bereik de aangeduide woordgrenzen in de juiste volgorde.',
+   focus:['w','e','combine','prove'][round],metadata:{solutionKind:'word-runner'},
+   ...(round===3?{forbidden:['h','j','k','l']}: {})
+  };
+  validateQuestExercise(ex);return ex;
+ });
 }
 function generateNavigationRound(kind,seed,round){
  const phase=questRoundType(round),[a,b,c,d,e,f,g,h]=questShuffle(seed,kind,round);
@@ -346,8 +363,9 @@ function generateNavigationRound(kind,seed,round){
 function validateQuestExercise(ex){
  if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.expected.length===0||(!['open-lines','line-delete','copy-paste','undo','final-boss'].includes(ex.metadata?.solutionKind) && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
  if(!ex.lines.every(x=>typeof x==='string')||!ex.expected.every(x=>typeof x==='string'))throw Error('Opdracht bevat geen gewone tekst');
- if(ex.lines.length===ex.expected.length&&ex.lines.every((x,i)=>x===ex.expected[i])&&!ex.target)throw Error('Opdracht heeft geen wijziging');
+ if(ex.lines.length===ex.expected.length&&ex.lines.every((x,i)=>x===ex.expected[i])&&!ex.target&&!ex.waypoints)throw Error('Opdracht heeft geen wijziging');
  if(ex.start[0]!==0||ex.start[1]!==0)throw Error('Generator moet op 1:1 starten');
+ if(ex.waypoints&&(!Array.isArray(ex.waypoints)||ex.waypoints.length===0||!ex.waypoints.every(w=>Array.isArray(w.position)&&w.position.length===2&&Number.isInteger(w.position[0])&&Number.isInteger(w.position[1])&&w.position[0]>=0&&w.position[0]<ex.lines.length&&w.position[1]>=0&&w.position[1]<ex.lines[w.position[0]].length&&typeof w.description==='string'&&w.description.length)))throw Error('Ongeldige waypoint-reeks');
  if(!ex.goal||!ex.skill||!ex.seed)throw Error('Onvolledige generatoropdracht');
  if(ex.roundType && (!Number.isInteger(ex.round)||questRoundType(ex.round).id!==ex.roundType))throw Error('Rondetype en rondenummer komen niet overeen');
  return true;
@@ -375,12 +393,6 @@ const LEVELS=[
 {id:'16',world:'06 · MASTERY',name:'Find the Target',title:'Precisiesprong',file:'precision.txt',desc:'Ga direct naar een karakter op de huidige regel met f gevolgd door het karakter.',goal:'Spring naar de <b>@</b> op deze regel.',lines:['path ....... @ treasure'],start:[0,0],target:[0,13],optimal:2,hint:'f@ springt naar de eerstvolgende @ op de huidige regel.'},
 {id:'17',world:'06 · MASTERY',name:'Final Boss',title:'The Keyboard Warrior',file:'boss.txt',desc:'Je laatste uitdaging: navigeer, verwijder de corrupte regel en herstel de ontbrekende tekst. Snelheid én precisie tellen.',goal:'Houd alleen <b>QUEST COMPLETE</b> en <b>YOU ARE A VIM WARRIOR</b> over, in die volgorde. Eindig in normal mode.',lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',optimal:9,hint:'dd verwijdert de corrupte regel. Ga daarna met G en $ naar het einde, gebruik a om IOR toe te voegen, en Esc.'}];
 // Level 02 is a four-round quest. Restrictions vary by round, not by skill.
-let WORD_ROUNDS=[
- {words:['fox','wolf','raven','dragon','serpent'],goals:[[1,'first'],[2,'last'],[3,'last'],[4,'first']],rule:'Alle bewegingen toegestaan.',forbidden:[]},
- {words:['ember','rune','mage','shield','sword'],goals:[[2,'first'],[3,'last'],[1,'first'],[4,'last']],rule:'Alle bewegingen toegestaan: kies je eigen route.',forbidden:[]},
- {words:['pixel','cursor','buffer','window','terminal'],goals:[[1,'last'],[3,'first'],[4,'last'],[2,'first']],rule:'Challenge: h, j, k en l zijn in deze ronde verboden.',forbidden:['h','j','k','l']},
- {words:['storm','north','forest','castle','victory'],goals:[[4,'first'],[2,'last'],[1,'first'],[3,'last']],rule:'Vrije ronde: alle Vim-motions zijn weer toegestaan.',forbidden:[]}
-];
 // Four increasingly varied exercises per level. Level 02 retains its checkpoint course.
 const EXTRA_ROUNDS={
   '11':[
@@ -500,34 +512,41 @@ const LESSONS=[
  [{keys:['f{teken}'],text:'Zoek het volgende voorkomen van het getypte teken op de huidige regel.'}],
  [{keys:['dd'],text:'Verwijder de volledige huidige regel.'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
 ];
-let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
+let waypointIndex=0,roundIndex=0,questReady=true;
 let generatedQuestRounds=null,questRunCounter=0,currentQuestSeed='';
-function currentRounds(){return idx===1?WORD_ROUNDS:generatedQuestRounds||EXTRA_ROUNDS[LEVELS[idx].id]}
-function currentExercise(){return idx===1?null:currentRounds()[roundIndex]}
-function wordPosition(round,step){const r=WORD_ROUNDS[round],g=r.goals[step],index=g[0];let start=0;for(let i=0;i<index;i++)start+=r.words[i].length+1;return [0,start+(g[1]==='last'?r.words[index].length-1:0)]}
-function wordTaskText(){const r=WORD_ROUNDS[wordRound],g=r.goals[wordStep];return `${g[1]==='first'?'eerste':'laatste'} letter van <b>${r.words[g[0]]}</b>`}
+function currentRounds(){return generatedQuestRounds||EXTRA_ROUNDS[LEVELS[idx].id]}
+function currentExercise(){return currentRounds()[roundIndex]}
 function updateWordUI(){
- const p=$('questProgress');p.style.display='block';
- if(idx===1){
-  const r=WORD_ROUNDS[wordRound];
-  p.innerHTML=`<b>RONDE ${wordRound+1}/${WORD_ROUNDS.length}</b><div class="dots">${r.goals.map((_,i)=>i<wordStep?'●':i===wordStep?'◉':'○').join(' ')}</div><b>VOLGENDE TARGET:</b> ${wordTaskText()}<div>${r.rule}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> Raak achtereenvolgens de aangeduide letters. '+wordTaskText()+'.';
- } else {
-  const ex=currentExercise();
-  const phase=roundLabel(ex);
-  p.innerHTML=`<b>RONDE ${roundIndex+1}/${currentRounds().length}${phase?' · '+phase:''}</b><div style="margin-top:5px">${ex.goal}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> '+ex.goal;
+ const p=$('questProgress'),ex=currentExercise(),phase=roundLabel(ex);
+ p.style.display='block';
+ let details='<div style="margin-top:5px">'+ex.goal+'</div>';
+ if(ex.waypoints){
+  const wp=ex.waypoints[waypointIndex];
+  details+='<div class="dots">'+ex.waypoints.map((_,i)=>i<waypointIndex?'●':i===waypointIndex?'◉':'○').join(' ')+'</div>';
+  if(wp)details+='<div><b>VOLGENDE TARGET:</b> '+escapeHtml(wp.description)+'</div>';
+  if(ex.forbidden?.length)details+='<div>Gebruik woordbewegingen: h, j, k en l zijn in deze ronde verboden.</div>';
  }
+ p.innerHTML='<b>RONDE '+(roundIndex+1)+'/'+currentRounds().length+(phase?' · '+phase:'')+'</b>'+details;
+ $('goal').innerHTML='<b>OBJECTIVE //</b> '+ex.goal+(ex.waypoints&&ex.waypoints[waypointIndex]?' Volgende: '+escapeHtml(ex.waypoints[waypointIndex].description)+'.':'');
+}
+function advanceWaypoints(){
+ const ex=currentExercise();
+ if(!ex?.waypoints||waypointIndex>=ex.waypoints.length||mode!=='normal')return false;
+ const position=ex.waypoints[waypointIndex].position;
+ if(row!==position[0]||col!==position[1])return false;
+ waypointIndex++;
+ updateWordUI();
+ if(waypointIndex<ex.waypoints.length)notice('Checkpoint gehaald! Volgende woordgrens.');
+ return true;
 }
 function prepareRound(r){
- roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
+ roundIndex=r;waypointIndex=0;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
  mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];searchTerm='';searchMatch=null;lastMessage='';
  if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
  if(ex.setup?.undoStates){undo=ex.setup.undoStates.map(state=>({lines:[...state],row:0,col:0}));}
  if(ex.setup?.redoStates){redo=ex.setup.redoStates.map(state=>({lines:[...state],row:0,col:0}));}
  updateWordUI();render();
 }
-function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
 let introStage='';
 function showLesson(){
  questReady=false;introStage='keys';
@@ -538,7 +557,7 @@ function showLesson(){
 }
 function showQuestBriefing(){
  introStage='quest';const l=LEVELS[idx];
- const special=idx===5?`<p>Leer twee basisacties: een fout terugdraaien en een teruggedraaide wijziging opnieuw uitvoeren.</p>`:idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
+ const special=idx===5?`<p>Leer twee basisacties: een fout terugdraaien en een teruggedraaide wijziging opnieuw uitvoeren.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
  showModal(`<div class="intro-step">02 / 02 · JOUW MISSIE</div><div class="eyebrow" style="margin-top:12px">QUEST BRIEFING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${escapeHtml(l.desc)}</p><div class="quest-preview"><strong>OBJECTIVE //</strong><div>${l.goal}</div></div>${special}<p class="tiny">BESTAND: ${escapeHtml(l.file)} · START IN NORMAL MODE</p><div class="modalactions"><button class="btn" id="backToKeys">← TOETSEN</button><button class="btn primary" id="beginQuest">START QUEST →</button></div>`);
  $('backToKeys').onclick=showLesson;
  $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
@@ -598,8 +617,8 @@ function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=
 function notice(s){lastMessage=s;$('notification').textContent=s}
 function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':count?('COUNT: '+count+' · wacht op beweging'):'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
 function levelComplete(){
- if(idx===1)return wordRound===WORD_ROUNDS.length-1&&wordStep===WORD_ROUNDS[wordRound].goals.length;
  const ex=currentExercise();
+ if(ex.waypoints&&waypointIndex<ex.waypoints.length)return false;
  if(ex.expected&&JSON.stringify(lines)!==JSON.stringify(ex.expected))return false;
  if(ex.target&&(row!==ex.target[0]||col!==ex.target[1]))return false;
  if(ex.requiredMode&&mode!==ex.requiredMode)return false;
@@ -607,14 +626,11 @@ function levelComplete(){
 }
 function evaluate(){
  if(!questReady||finished)return;
- if(idx===1){
-  if(wordStep<WORD_ROUNDS[wordRound].goals.length){const pos=wordPosition(wordRound,wordStep);
-   if(row===pos[0]&&col===pos[1]){wordStep++;
-    if(wordStep>=WORD_ROUNDS[wordRound].goals.length&&wordRound<WORD_ROUNDS.length-1){setWordRound(wordRound+1);notice('Ronde voltooid! Nieuwe tekst, nieuwe route.');render();return}
-    if(wordStep<WORD_ROUNDS[wordRound].goals.length){updateWordUI();notice('Checkpoint gehaald! Op naar de volgende letter.');render()}
-   }
-  }
- }else if(levelComplete()&&roundIndex<currentRounds().length-1){
+ if(currentExercise()?.waypoints){
+  advanceWaypoints();
+  if(!levelComplete())return;
+ }
+ if(levelComplete()&&roundIndex<currentRounds().length-1){
   prepareRound(roundIndex+1);notice('Ronde voltooid! Nieuwe opdracht.');render();return;
  }
  if(levelComplete()){
@@ -636,7 +652,7 @@ function inputKey(e){
  }
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(!questReady)return;
- if(idx===1&&mode==='normal'&&WORD_ROUNDS[wordRound].forbidden.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
+ if(mode==='normal'&&currentExercise()?.forbidden?.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
  if(k.startsWith('Arrow')){notice('Geen pijltjes! Gebruik h j k l.');return}
  if(k==='Tab')return;
  if(k==='Escape'){
@@ -682,12 +698,10 @@ function inputKey(e){
 function loadLevel(i){
  if(!TEST_ALL_LEVELS&&i+1>data.unlocked)return;
  clearInterval(clock);idx=i;const l=LEVELS[i];
- mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
+ mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;waypointIndex=0;
  currentQuestSeed='run-'+Date.now()+'-'+(++questRunCounter);
- if(idx===1)WORD_ROUNDS=generateWordRunnerRounds(currentQuestSeed);
  generatedQuestRounds=dynamicQuestForLevel(l.id,currentQuestSeed);
- if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
- else prepareRound(0);
+ prepareRound(0);
  $('stageLabel').textContent='TRIAL '+l.id+' / '+LEVELS.length+' · '+l.world;
  $('levelTitle').textContent=l.title;$('description').textContent=l.desc;$('filename').textContent=l.file;
  $('timer').textContent='00:00';$('notification').textContent='';
