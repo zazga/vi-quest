@@ -28,10 +28,10 @@ const LEVELS=[
 {id:'06',world:'02 · INSERT',name:"Line Insert",title:"Begin en eind",file:'06.txt',desc:"Voeg de genoemde tekst toe aan het begin of einde van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["  score = 10"],start:[0,7],expected:["  let score = 10"],requiredMode:'normal',optimal:9,hint:"I gaat naar de eerste niet-lege kolom; A naar het regeleinde."},
 {id:'07',world:'02 · INSERT',name:"Open Lines",title:"Nieuwe regels",file:'07.txt',desc:"Voeg nieuwe regels met gewone woorden toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["start","finish"],start:[0,0],expected:["start","middle","finish"],requiredMode:'normal',optimal:9,hint:"o opent een regel eronder; O erboven."},
 {id:'08',world:'03 · DELETE',name:"Character Delete",title:"Vernietig de bug",file:'08.txt',desc:"Verwijder de genoemde extra letter uit een woord.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["// boot","consoole.log(\"hi\");","done();"],start:[0,0],expected:["// boot","console.log(\"hi\");","done();"],requiredMode:'normal',optimal:9,hint:"x verwijdert onder de cursor; X links van de cursor."},
-{id:'09',world:'03 · DELETE',name:"Word Delete",title:"Woorden schrappen",file:'09.txt',desc:"Verwijder woorden zonder de rest van de zin te beschadigen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior"],start:[0,4],expected:["the warrior"],requiredMode:'normal',optimal:9,hint:"dw verwijdert tot het volgende woord; de tot en met het woordeinde."},
-{id:'10',world:'03 · DELETE',name:"Line Slayer",title:"Regels opschonen",file:'10.txt',desc:"Verwijder regels of het resterende deel van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["keep","REMOVE_ME","keep too"],start:[0,0],expected:["keep","keep too"],requiredMode:'normal',optimal:9,hint:"dd verwijdert een volledige regel; D vanaf de cursor tot het regeleinde."},
-{id:'11',world:'04 · CHANGE',name:"Replace & Substitute",title:"Eén teken veranderen",file:'11.txt',desc:"Corrigeer letters met vervangcommando’s.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the cxt waits"],start:[0,5],expected:["the cat waits"],requiredMode:'normal',optimal:9,hint:"r vervangt één teken; s vervangt een teken en opent INSERT."},
-{id:'12',world:'04 · CHANGE',name:"Change Operator",title:"Herschrijf het lot",file:'12.txt',desc:"Wijzig woorden, regels en delen van regels.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior rises"],start:[0,4],expected:["the strong warrior rises"],requiredMode:'normal',optimal:9,hint:"cw wijzigt een woord; cc een regel; C de rest van de regel."},
+{id:'09',world:'03 · DELETE',name:"Word Delete",title:"Woorden schrappen",file:'09.txt',desc:"Verwijder precies de aangegeven woorden of woorddelen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior"],start:[0,4],expected:["the warrior"],requiredMode:'normal',optimal:9,hint:"dw verwijdert tot het volgende woord; de tot en met het woordeinde."},
+{id:'10',world:'03 · DELETE',name:"Line Slayer",title:"Regels opschonen",file:'10.txt',desc:"Verwijder complete regels of een aangegeven deel van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["keep","REMOVE_ME","keep too"],start:[0,0],expected:["keep","keep too"],requiredMode:'normal',optimal:9,hint:"dd verwijdert een volledige regel; D vanaf de cursor tot het regeleinde."},
+{id:'11',world:'04 · CHANGE',name:"Replace & Substitute",title:"Eén teken veranderen",file:'11.txt',desc:"Vervang de aangegeven letters door nieuwe letters.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the cxt waits"],start:[0,5],expected:["the cat waits"],requiredMode:'normal',optimal:9,hint:"r vervangt één teken; s vervangt een teken en opent INSERT."},
+{id:'12',world:'04 · CHANGE',name:"Change Operator",title:"Herschrijf het lot",file:'12.txt',desc:"Vervang woorden, regeldelen of een hele regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior rises"],start:[0,4],expected:["the strong warrior rises"],requiredMode:'normal',optimal:9,hint:"cw wijzigt een woord; cc een regel; C de rest van de regel."},
 {id:'13',world:'05 · POWER MOVES',name:'Copy / Paste',title:'De kloonkamer',file:'clone.txt',desc:'Met yank en put dupliceer je regels zonder opnieuw te typen.',goal:'Maak een tweede regel met exact <b>echo "vim"</b>.',lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],optimal:3,hint:'yy kopieert de hele regel. p plakt die eronder.'},
 {id:'14',world:'05 · POWER MOVES',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Fouten herstellen is sneller dan perfect zijn. De undo-stack is jouw tijdmachine.',goal:'Herstel de oorspronkelijke tekst <b>never give up</b>.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
 {id:'15',world:'05 · POWER MOVES',name:'Search Hunter',title:'De jacht op de schaduw',file:'search.txt',desc:'Vind een doelwit in een groot bestand met de zoekopdracht / en Enter.',goal:'Bereik de eerste letter van <b>shadow</b>.',lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],optimal:8,hint:'Typ /shadow en druk Enter.'},
@@ -47,28 +47,28 @@ const WORD_ROUNDS=[
 // Four increasingly varied exercises per level. Level 02 retains its checkpoint course.
 const EXTRA_ROUNDS={
   '10':[
-    {lines:["keep","REMOVE_ME","keep too"],expected:["keep","keep too"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste middelste regel."},
-    {lines:["const hp = 10; // wrong"],expected:["const hp = 10;"],start:[0,0],requiredMode:'normal',goal:"Verwijder de overbodige opmerking."},
-    {lines:["DROP","keep first","keep second"],expected:["keep first","keep second"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste bovenste regel."},
-    {lines:["return power; // debug"],expected:["return power;"],start:[0,0],requiredMode:'normal',goal:"Schoon het einde van de regel op."}
+    {lines:["bewaar deze regel","VERWIJDER DEZE REGEL","en bewaar deze ook"],start:[0,0],expected:["bewaar deze regel","en bewaar deze ook"],requiredMode:'normal',goal:"Verwijder de volledige regel <b>VERWIJDER DEZE REGEL</b>."},
+    {lines:["het kasteel staat // weg hiermee"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Verwijder <b> // weg hiermee</b> uit regel 1."},
+    {lines:["DIT MAG WEG","de reis begint"],start:[0,0],expected:["de reis begint"],requiredMode:'normal',goal:"Verwijder de volledige eerste regel <b>DIT MAG WEG</b>."},
+    {lines:["de maan schijnt // extra tekst"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Verwijder <b> // extra tekst</b> uit regel 1."}
   ],
   '11':[
-    {lines:["the cxt waits"],expected:["the cat waits"],start:[0,0],requiredMode:'normal',goal:"Herstel de naam van het dier."},
-    {lines:["vim is gXd"],expected:["vim is good"],start:[0,0],requiredMode:'normal',goal:"Corrigeer beide foutieve tekens."},
-    {lines:["I h@te bugs"],expected:["I hate bugs"],start:[0,0],requiredMode:'normal',goal:"Corrigeer de foutieve letter."},
-    {lines:["the b0ss arrived"],expected:["the boss arrived"],start:[0,0],requiredMode:'normal',goal:"Herstel het verkeerde teken."}
+    {lines:["de kxt loopt"],start:[0,0],expected:["de kat loopt"],requiredMode:'normal',goal:"Vervang de <b>x</b> in <b>kxt</b> door <b>a</b>."},
+    {lines:["de grote b0om"],start:[0,0],expected:["de grote boom"],requiredMode:'normal',goal:"Vervang de <b>0</b> in <b>b0om</b> door <b>o</b>."},
+    {lines:["de mXan schijnt"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Vervang de <b>X</b> in <b>mXan</b> door <b>a</b>."},
+    {lines:["het gr0ene bos"],start:[0,0],expected:["het groene bos"],requiredMode:'normal',goal:"Vervang de <b>0</b> in <b>gr0ene</b> door <b>o</b>."}
   ],
   '12':[
-    {lines:["the weak warrior rises"],expected:["the strong warrior rises"],start:[0,0],requiredMode:'normal',goal:"Verander <b>weak</b> in <b>strong</b>."},
-    {lines:["old line"],expected:["a totally new line"],start:[0,0],requiredMode:'normal',goal:"Herschrijf de hele regel."},
-    {lines:["const answer = wrong"],expected:["const answer = 42;"],start:[0,0],requiredMode:'normal',goal:"Herstel de waarde aan de rechterkant."},
-    {lines:["the slow runner wins"],expected:["the swift runner wins"],start:[0,0],requiredMode:'normal',goal:"Verander <b>slow</b> in <b>swift</b>."}
+    {lines:["de kleine draak"],start:[0,0],expected:["de grote draak"],requiredMode:'normal',goal:"Vervang <b>kleine</b> door <b>grote</b>."},
+    {lines:["een oude zin"],start:[0,0],expected:["een volledig nieuwe zin"],requiredMode:'normal',goal:"Vervang de volledige eerste regel door <b>een volledig nieuwe zin</b>."},
+    {lines:["de maan is blauw"],start:[0,0],expected:["de maan is helder"],requiredMode:'normal',goal:"Vervang <b>blauw</b> door <b>helder</b>."},
+    {lines:["een slome schildpad"],start:[0,0],expected:["een snelle schildpad"],requiredMode:'normal',goal:"Vervang <b>slome</b> door <b>snelle</b>."}
   ],
   '13':[
-        {lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],goal:'Maak een tweede regel met <b>echo "vim"</b>.'},
-    {lines:['const mana = 20;'],start:[0,0],expected:['const mana = 20;','const mana = 20;'],goal:'Dupliceer de regel <b>const mana = 20;</b>.'},
-    {lines:['// keyboard warrior'],start:[0,5],expected:['// keyboard warrior','// keyboard warrior'],goal:'Kopieer de commentaarregel naar de regel eronder.'},
-    {lines:['save();'],start:[0,2],expected:['save();','save();'],goal:'Maak een tweede regel met <b>save();</b>.'}
+    {lines:["de draak slaapt"],start:[0,0],expected:["de draak slaapt","de draak slaapt"],requiredMode:'normal',goal:"Zet <b>de draak slaapt</b> twee keer onder elkaar."},
+    {lines:["een gouden sleutel"],start:[0,0],expected:["een gouden sleutel","een gouden sleutel"],requiredMode:'normal',goal:"Maak een tweede regel met exact <b>een gouden sleutel</b>."},
+    {lines:["het bos is stil"],start:[0,0],expected:["het bos is stil","het bos is stil"],requiredMode:'normal',goal:"Maak een kopie van de eerste regel op de regel eronder."},
+    {lines:["de reis begint"],start:[0,0],expected:["de reis begint","de reis begint"],requiredMode:'normal',goal:"Zet <b>de reis begint</b> twee keer onder elkaar."}
   ],
   '14':[
         {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Herstel de originele tekst <b>never give up</b>.'},
@@ -137,10 +137,10 @@ const EXTRA_ROUNDS={
     {lines:["de held rust","een bloemm groeit"],start:[0,0],expected:["de held rust","een bloem groeit"],requiredMode:'normal',goal:"Verwijder één extra <b>m</b> uit <b>bloemm</b> op regel 2."}
   ],
   '09':[
-    {lines:["the weak warrior"],expected:["the warrior"],start:[0,0],requiredMode:'normal',goal:"Verwijder het verkeerde woord."},
-    {lines:["levelBUG!"],expected:["level!"],start:[0,0],requiredMode:'normal',goal:"Verwijder de foutieve toevoeging vóór het uitroepteken."},
-    {lines:["please remove danger now"],expected:["please remove now"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste tekst."},
-    {lines:["safeerror!"],expected:["safe!"],start:[0,0],requiredMode:'normal',goal:"Herstel het woord vóór het uitroepteken."}
+    {lines:["de kleine draak slaapt"],start:[0,0],expected:["de draak slaapt"],requiredMode:'normal',goal:"Verwijder <b>kleine </b> uit regel 1."},
+    {lines:["een vuurBUG!"],start:[0,0],expected:["een vuur!"],requiredMode:'normal',goal:"Verwijder <b>BUG</b> uit regel 1, maar behoud <b>!</b>."},
+    {lines:["de held draagt een zware tas"],start:[0,0],expected:["de held draagt een tas"],requiredMode:'normal',goal:"Verwijder <b>zware </b> uit regel 1."},
+    {lines:["de schatFAKE!"],start:[0,0],expected:["de schat!"],requiredMode:'normal',goal:"Verwijder <b>FAKE</b> uit regel 1, maar behoud <b>!</b>."}
   ]
 };
 // Every level has a dedicated key-learning screen, followed by a quest briefing.
