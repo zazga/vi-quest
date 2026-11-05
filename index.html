@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.4.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.4.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 const LEVELS=[
 {id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Bereik de <b>X</b> op de aangegeven positie.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
@@ -48,21 +48,21 @@ const WORD_ROUNDS=[
 const EXTRA_ROUNDS={
   '10':[
     {lines:["keep","REMOVE_ME","keep too"],expected:["keep","keep too"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste middelste regel."},
-    {lines:["const hp = 10; // wrong"],expected:["const hp = 10;"],start:[0,14],requiredMode:'normal',goal:"Verwijder de overbodige opmerking."},
-    {lines:["DROP","keep first","keep second"],expected:["keep first","keep second"],start:[2,0],requiredMode:'normal',goal:"Verwijder de ongewenste bovenste regel."},
-    {lines:["return power; // debug"],expected:["return power;"],start:[0,13],requiredMode:'normal',goal:"Schoon het einde van de regel op."}
+    {lines:["const hp = 10; // wrong"],expected:["const hp = 10;"],start:[0,0],requiredMode:'normal',goal:"Verwijder de overbodige opmerking."},
+    {lines:["DROP","keep first","keep second"],expected:["keep first","keep second"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste bovenste regel."},
+    {lines:["return power; // debug"],expected:["return power;"],start:[0,0],requiredMode:'normal',goal:"Schoon het einde van de regel op."}
   ],
   '11':[
-    {lines:["the cxt waits"],expected:["the cat waits"],start:[0,5],requiredMode:'normal',goal:"Herstel de naam van het dier."},
-    {lines:["vim is gXd"],expected:["vim is good"],start:[0,8],requiredMode:'normal',goal:"Corrigeer beide foutieve tekens."},
-    {lines:["I h@te bugs"],expected:["I hate bugs"],start:[0,3],requiredMode:'normal',goal:"Corrigeer de foutieve letter."},
-    {lines:["the b0ss arrived"],expected:["the boss arrived"],start:[0,5],requiredMode:'normal',goal:"Herstel het verkeerde teken."}
+    {lines:["the cxt waits"],expected:["the cat waits"],start:[0,0],requiredMode:'normal',goal:"Herstel de naam van het dier."},
+    {lines:["vim is gXd"],expected:["vim is good"],start:[0,0],requiredMode:'normal',goal:"Corrigeer beide foutieve tekens."},
+    {lines:["I h@te bugs"],expected:["I hate bugs"],start:[0,0],requiredMode:'normal',goal:"Corrigeer de foutieve letter."},
+    {lines:["the b0ss arrived"],expected:["the boss arrived"],start:[0,0],requiredMode:'normal',goal:"Herstel het verkeerde teken."}
   ],
   '12':[
-    {lines:["the weak warrior rises"],expected:["the strong warrior rises"],start:[0,4],requiredMode:'normal',goal:"Verander <b>weak</b> in <b>strong</b>."},
-    {lines:["old line"],expected:["a totally new line"],start:[0,3],requiredMode:'normal',goal:"Herschrijf de hele regel."},
-    {lines:["const answer = wrong"],expected:["const answer = 42;"],start:[0,15],requiredMode:'normal',goal:"Herstel de waarde aan de rechterkant."},
-    {lines:["the slow runner wins"],expected:["the swift runner wins"],start:[0,4],requiredMode:'normal',goal:"Verander <b>slow</b> in <b>swift</b>."}
+    {lines:["the weak warrior rises"],expected:["the strong warrior rises"],start:[0,0],requiredMode:'normal',goal:"Verander <b>weak</b> in <b>strong</b>."},
+    {lines:["old line"],expected:["a totally new line"],start:[0,0],requiredMode:'normal',goal:"Herschrijf de hele regel."},
+    {lines:["const answer = wrong"],expected:["const answer = 42;"],start:[0,0],requiredMode:'normal',goal:"Herstel de waarde aan de rechterkant."},
+    {lines:["the slow runner wins"],expected:["the swift runner wins"],start:[0,0],requiredMode:'normal',goal:"Verander <b>slow</b> in <b>swift</b>."}
   ],
   '13':[
         {lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],goal:'Maak een tweede regel met <b>echo "vim"</b>.'},
@@ -113,34 +113,34 @@ const EXTRA_ROUNDS={
     {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Bereik de <b>X</b> op regel <b>5</b>.'}
   ],
   '05':[
-    {lines:["vim is great"],expected:["vim is really great"],start:[0,7],requiredMode:'normal',goal:"Maak de zin <b>vim is really great</b>."},
-    {lines:["run"],expected:["rune"],start:[0,2],requiredMode:'normal',goal:"Maak van <b>run</b> het woord <b>rune</b>."},
-    {lines:["the quest"],expected:["the epic quest"],start:[0,4],requiredMode:'normal',goal:"Maak de zin <b>the epic quest</b>."},
-    {lines:["power"],expected:["powerful"],start:[0,4],requiredMode:'normal',goal:"Verander <b>power</b> in <b>powerful</b>."}
+    {lines:["// spellbook","const spell = \"vim\";","message = \"hello world\";","cast();"],expected:["// spellbook","const spell = \"vim\";","message = \"hello brave world\";","cast();"],start:[0,0],requiredMode:'normal',goal:"Maak op regel 3 van de boodschap <b>hello brave world</b>."},
+    {lines:["// status","let hero = \"warrior\";","const weapon = \"keyboard\"","attack();"],expected:["// status","let hero = \"warrior\";","const weapon = \"keyboard\";","attack();"],start:[0,0],requiredMode:'normal',goal:"Maak de declaratie van <b>weapon</b> syntactisch compleet."},
+    {lines:["// quest","the dragon waits","enter cave"],expected:["// quest","the mighty dragon waits","enter cave"],start:[0,0],requiredMode:'normal',goal:"Maak op regel 2 de zin <b>the mighty dragon waits</b>."},
+    {lines:["// runes","const rune = \"vim\"","return rune"],expected:["// runes","const rune = \"vimmage\"","return rune"],start:[0,0],requiredMode:'normal',goal:"Maak van de string op regel 2 <b>vimmage</b>."}
   ],
   '06':[
-    {lines:["  score = 10"],expected:["  let score = 10"],start:[0,7],requiredMode:'normal',goal:"Maak de regel tot een geldige declaratie."},
-    {lines:["console.log(\"vim\")"],expected:["console.log(\"vim\");"],start:[0,0],requiredMode:'normal',goal:"Zet een puntkomma achter de functieaanroep."},
-    {lines:["    value = 2"],expected:["    const value = 2"],start:[0,12],requiredMode:'normal',goal:"Maak de ingesprongen regel tot een declaratie."},
-    {lines:["return score"],expected:["return score;"],start:[0,1],requiredMode:'normal',goal:"Voeg het afsluitende leesteken toe."}
+    {lines:["// setup","  score = 10","return score"],expected:["// setup","  let score = 10","return score"],start:[0,0],requiredMode:'normal',goal:"Maak de ingesprongen variabeledeclaratie compleet."},
+    {lines:["// logging","console.log(\"vim\")","done();"],expected:["// logging","console.log(\"vim\");","done();"],start:[0,0],requiredMode:'normal',goal:"Maak de functieaanroep op regel 2 syntactisch compleet."},
+    {lines:["// result","    value = 2","return value"],expected:["// result","    const value = 2","return value"],start:[0,0],requiredMode:'normal',goal:"Maak de declaratie op regel 2 compleet zonder de inspringing te veranderen."},
+    {lines:["// calculate","let score = 12","return score"],expected:["// calculate","let score = 12","return score;"],start:[0,0],requiredMode:'normal',goal:"Maak de laatste regel syntactisch compleet."}
   ],
   '07':[
-    {lines:["start","finish"],expected:["start","middle","finish"],start:[0,0],requiredMode:'normal',goal:"Zet <b>middle</b> tussen de twee regels."},
-    {lines:["finish"],expected:["start","finish"],start:[0,2],requiredMode:'normal',goal:"Voeg <b>start</b> als eerste regel toe."},
-    {lines:["one","three"],expected:["one","two","three"],start:[0,1],requiredMode:'normal',goal:"Zet <b>two</b> tussen de regels."},
-    {lines:["tail"],expected:["head","tail"],start:[0,0],requiredMode:'normal',goal:"Voeg <b>head</b> bovenaan toe."}
+    {lines:["// route","start","finish","// end"],expected:["// route","start","middle","finish","// end"],start:[0,0],requiredMode:'normal',goal:"Voeg <b>middle</b> toe tussen de regels <b>start</b> en <b>finish</b>."},
+    {lines:["// journey","finish","// credits"],expected:["// journey","start","finish","// credits"],start:[0,0],requiredMode:'normal',goal:"Voeg <b>start</b> toe direct boven <b>finish</b>."},
+    {lines:["// sequence","one","three","done"],expected:["// sequence","one","two","three","done"],start:[0,0],requiredMode:'normal',goal:"Zorg dat <b>one</b>, <b>two</b> en <b>three</b> op opeenvolgende regels staan."},
+    {lines:["// mission","tail","// footer"],expected:["// mission","head","tail","// footer"],start:[0,0],requiredMode:'normal',goal:"Voeg <b>head</b> toe direct boven <b>tail</b>."}
   ],
   '08':[
     {lines:["// boot","consoole.log(\"hi\");","done();"],expected:["// boot","console.log(\"hi\");","done();"],start:[0,0],requiredMode:'normal',goal:"Corrigeer de functieaanroep op regel 2."},
-    {lines:["let scoree = 100;","return score;"],expected:["let score = 100;","return score;"],start:[0,11],requiredMode:'normal',goal:"Herstel de variabelenaam op regel 1."},
-    {lines:["const vimm = true;","run();"],expected:["const vim = true;","run();"],start:[1,0],requiredMode:'normal',goal:"Verwijder de overtollige letter op regel 1."},
-    {lines:["returnn power;","finish();"],expected:["return power;","finish();"],start:[0,8],requiredMode:'normal',goal:"Herstel het verkeerd gespelde sleutelwoord."}
+    {lines:["let scoree = 100;","return score;"],expected:["let score = 100;","return score;"],start:[0,0],requiredMode:'normal',goal:"Herstel de variabelenaam op regel 1."},
+    {lines:["const vimm = true;","run();"],expected:["const vim = true;","run();"],start:[0,0],requiredMode:'normal',goal:"Verwijder de overtollige letter op regel 1."},
+    {lines:["returnn power;","finish();"],expected:["return power;","finish();"],start:[0,0],requiredMode:'normal',goal:"Herstel het verkeerd gespelde sleutelwoord."}
   ],
   '09':[
-    {lines:["the weak warrior"],expected:["the warrior"],start:[0,4],requiredMode:'normal',goal:"Verwijder het verkeerde woord."},
-    {lines:["levelBUG!"],expected:["level!"],start:[0,5],requiredMode:'normal',goal:"Verwijder de foutieve toevoeging vóór het uitroepteken."},
-    {lines:["please remove danger now"],expected:["please remove now"],start:[0,14],requiredMode:'normal',goal:"Verwijder de ongewenste tekst."},
-    {lines:["safeerror!"],expected:["safe!"],start:[0,4],requiredMode:'normal',goal:"Herstel het woord vóór het uitroepteken."}
+    {lines:["the weak warrior"],expected:["the warrior"],start:[0,0],requiredMode:'normal',goal:"Verwijder het verkeerde woord."},
+    {lines:["levelBUG!"],expected:["level!"],start:[0,0],requiredMode:'normal',goal:"Verwijder de foutieve toevoeging vóór het uitroepteken."},
+    {lines:["please remove danger now"],expected:["please remove now"],start:[0,0],requiredMode:'normal',goal:"Verwijder de ongewenste tekst."},
+    {lines:["safeerror!"],expected:["safe!"],start:[0,0],requiredMode:'normal',goal:"Herstel het woord vóór het uitroepteken."}
   ]
 };
 // Every level has a dedicated key-learning screen, followed by a quest briefing.
@@ -192,7 +192,7 @@ function showLesson(){
  questReady=false;introStage='keys';
  const l=LEVELS[idx];
  const rows=LESSONS[idx].map(item=>`<div class="lesson-item"><div class="lesson-keys">${item.keys.map(key=>`<span class="lesson-key">${escapeHtml(key)}</span>`).join('')}</div><div class="lesson-text">${escapeHtml(item.text)}</div></div>`).join('');
- showModal(`<div class="intro-step">01 / 02 · LEER DE TOETSEN</div><div class="eyebrow" style="margin-top:12px">TRAINING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>Leer eerst de bewegingen en commando's die in deze quest handig zijn. Je hoeft niet alle mogelijkheden uit je hoofd te kennen: probeer ze straks uit.</p><div class="lesson-list">${rows}</div><div class="modalactions"><button class="btn primary" id="toQuest">GA NAAR QUEST →</button></div>`);
+ showModal(`<div class="intro-step">01 / 02 · LEER DE TOETSEN</div><div class="eyebrow" style="margin-top:12px">TRAINING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${idx>=4&&idx<=11?"Leer de nieuwe commando's. Eerder geleerde bewegingen blijven belangrijk: je begint elke Editing-ronde linksboven en zoekt zelf je doel.":"Leer eerst de bewegingen en commando's die in deze quest handig zijn. Je hoeft niet alle mogelijkheden uit je hoofd te kennen: probeer ze straks uit."}</p><div class="lesson-list">${rows}</div><div class="modalactions"><button class="btn primary" id="toQuest">GA NAAR QUEST →</button></div>`);
  $('toQuest').onclick=showQuestBriefing;
 }
 function showQuestBriefing(){
