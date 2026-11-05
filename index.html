@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.10.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.10.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -739,6 +739,8 @@ function inputKey(e){
  if(k.startsWith('Arrow')){notice('Geen pijltjes! Gebruik h j k l.');return}
  if(k==='Tab')return;
  if(k==='Escape'){
+  // Escape is a real keystroke when leaving insert/search/command mode.
+  if(questReady&&!finished&&mode!=='normal'){keys++;roundKeys++;history.push('Esc');if(history.length>40)history.shift()}
   // Prevent this same Escape event from dismissing the victory modal opened by evaluate().
   e.stopPropagation();
   if(mode==='insert'&&col>0)col--;
