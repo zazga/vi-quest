@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.6.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.7.0'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -95,13 +95,19 @@ function questRoundType(round){
  return QUEST_ROUND_TYPES[round];
 }
 const DYNAMIC_QUESTS=Object.freeze({
- '08':Object.freeze({skill:'delete',generator:'character-delete',rounds:QUEST_ROUND_TYPES})
+ '05':Object.freeze({skill:'insert',generator:'insert-append',rounds:QUEST_ROUND_TYPES}),
+ '06':Object.freeze({skill:'insert',generator:'line-insert',rounds:QUEST_ROUND_TYPES}),
+ '07':Object.freeze({skill:'insert',generator:'open-lines',rounds:QUEST_ROUND_TYPES}),
+ '08':Object.freeze({skill:'delete',generator:'character-delete',rounds:QUEST_ROUND_TYPES}),
+ '11':Object.freeze({skill:'change',generator:'replace-substitute',rounds:QUEST_ROUND_TYPES}),
+ '12':Object.freeze({skill:'change',generator:'change-operator',rounds:QUEST_ROUND_TYPES})
 });
 function createDynamicQuest(config,seed){
  if(!config||!config.generator)throw Error('Dynamische quest mist een generator');
  if(config.generator==='character-delete'){
   return config.rounds.map((type,round)=>generateCharacterDeleteRound(seed,round));
  }
+ if(config.generator!=='character-delete')return config.rounds.map((_,round)=>generateEditingRound(config.generator,seed,round));
  throw Error('Onbekende questgenerator: '+config.generator);
 }
 function dynamicQuestForLevel(levelId,seed){
@@ -156,8 +162,53 @@ function makeCharacterDeleteQuest(seed){
  return createDynamicQuest(DYNAMIC_QUESTS['08'],seed);
 }
 
+
+function generateEditingRound(kind,seed,round){
+ const phase=questRoundType(round),rng=seededQuestRandom([QUEST_GENERATOR_VERSION,seed,kind,round].join('|'));
+ const pool=[...QUEST_TOKENS];for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+ const [a,b,c,d,e,f,g,h]=pool;
+ let lines,expected,goal,focus;
+ // Each stage gives an exact change, but never the required keystrokes.
+ const definitions={
+ 'insert-append':[
+ [[a+' '+b,c+' '+d],[a+' '+b,c+' '+e+' '+d],'Voeg '+e+' toe vóór '+d+' op regel 2.','i'],
+ [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+' '+e],'Voeg een spatie en '+e+' toe na '+d+' op regel 2.','a'],
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+d,e+' '+g+' '+f],'Voeg '+g+' toe vóór '+f+' op regel 3.','i'],
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+g+' '+d,e+' '+f+' '+h],'Voeg '+g+' toe vóór '+d+' op regel 2 en voeg '+h+' toe na '+f+' op regel 3.','combine']
+ ],
+ 'line-insert':[
+ [[a+' '+b,'  '+c+' '+d],[a+' '+b,'  '+e+' '+c+' '+d],'Voeg '+e+' met een spatie toe vóór '+c+' op regel 2. Behoud de twee beginspaties.','I'],
+ [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+'!'],'Voeg ! toe aan het einde van regel 2.','A'],
+ [[a+' '+b,c+' '+d,'    '+e+' '+f],[a+' '+b,c+' '+d,'    '+g+' '+e+' '+f],'Voeg '+g+' met een spatie toe vóór '+e+' op regel 3. Behoud de vier beginspaties.','I'],
+ [[a+' '+b,'  '+c+' '+d,e+' '+f],[a+' '+b,'  '+g+' '+c+' '+d,e+' '+f+'!'],'Voeg '+g+' met een spatie toe vóór '+c+' op regel 2 en ! aan het einde van regel 3.','combine']
+ ],
+ 'open-lines':[
+ [[a,b],[a,c,b],'Maak een nieuwe regel met '+c+' direct onder '+a+'.','o'],
+ [[a,b,c],[a,d,b,c],'Maak een nieuwe regel met '+d+' direct boven '+b+'.','O'],
+ [[a,b,c,d],[a,b,e,c,d],'Maak een nieuwe regel met '+e+' tussen '+b+' en '+c+'.','o'],
+ [[a,b,c],[a,d,b,e,c],'Maak een nieuwe regel '+d+' tussen '+a+' en '+b+', en een nieuwe regel '+e+' tussen '+b+' en '+c+'.','combine']
+ ],
+ 'replace-substitute':[
+ [[a+' '+b+'#'+c],[a+' '+b+'@'+c],'Vervang # door @ op regel 1.','r'],
+ [[a+' '+b,c+'#'+d],[a+' '+b,c+'@'+d],'Vervang # door @ op regel 2.','s'],
+ [[a+' '+b,c+' '+d,e+'#'+f],[a+' '+b,c+' '+d,e+'@'+f],'Vervang # door @ op regel 3.','r'],
+ [[a+'#'+b,c+' '+d,e+'#'+f],[a+'@'+b,c+' '+d,e+'@'+f],'Vervang beide #-tekens door @ op regel 1 en regel 3.','combine']
+ ],
+ 'change-operator':[
+ [[a+' '+b+' '+c],[a+' '+d+' '+c],'Vervang '+b+' door '+d+' op regel 1.','cw'],
+ [[a+' '+b,c+' '+d],[a+' '+b,e+' '+f],'Vervang de volledige tweede regel door: '+e+' '+f+'.','cc'],
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+d,e+' '+g],'Vervang '+f+' door '+g+' op regel 3; behoud '+e+' ervoor.','C'],
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+g,c+' '+d,e+' '+h],'Vervang '+b+' door '+g+' op regel 1 en '+f+' door '+h+' op regel 3.','combine']
+ ]};
+ if(!definitions[kind])throw Error('Onbekende Editing-generator: '+kind);
+ [lines,expected,goal,focus]=definitions[kind][round];
+ const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='change-operator'||kind==='replace-substitute'?'change':'insert',difficulty:phase.difficulty,round,roundType:phase.id,
+ lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind}};
+ validateQuestExercise(ex);return ex;
+}
+
 function validateQuestExercise(ex){
- if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.lines.length!==ex.expected.length)throw Error('Ongeldig opdrachtformaat');
+ if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||(!Array.isArray(ex.metadata?.solutionKind) && ex.metadata?.solutionKind!=='open-lines' && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
  if(!ex.lines.every(x=>typeof x==='string')||!ex.expected.every(x=>typeof x==='string'))throw Error('Opdracht bevat geen gewone tekst');
  if(ex.lines.every((x,i)=>x===ex.expected[i]))throw Error('Opdracht heeft geen wijziging');
  if(ex.start[0]!==0||ex.start[1]!==0)throw Error('Generator moet op 1:1 starten');
@@ -449,7 +500,7 @@ function inputKey(e){
   // Prevent this same Escape event from dismissing the victory modal opened by evaluate().
   e.stopPropagation();
   if(mode==='insert'&&col>0)col--;
-  mode='normal';pending='';count='';command='';render();evaluate();if(idx===5&&!finished){notice('Huidige tekst: '+JSON.stringify(lines[0])+' · vereist: \"vimmage\" in NORMAL mode');render()}return;
+  mode='normal';pending='';count='';command='';render();evaluate();return;
  }
  if(!started)startTimer();
  if(finished)return;
@@ -507,10 +558,10 @@ function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">
 function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginner'){
  introStage='';
  const seed=String(seedValue),skill=skillValue,difficulty=difficultyValue;
- const generated=skill==='delete'?makeCharacterDeleteQuest(seed):Array.from({length:4},(_,round)=>generateQuestExercise({seed,skill,difficulty,round}));
+ const generated=skill==='delete'?makeCharacterDeleteQuest(seed):dynamicQuestForLevel(skill==='insert'?'05':'12',seed);
  const choices=(values,selected)=>values.map(value=>'<option value="'+escapeHtml(value)+'"'+(value===selected?' selected':'')+'>'+escapeHtml(value)+'</option>').join('');
  const previews=generated.map((ex,i)=>'<div class="quest-preview" style="margin:10px 0"><strong>RONDE '+(i+1)+'/4'+(roundLabel(ex)?' · '+roundLabel(ex):'')+'</strong><p>'+escapeHtml(ex.goal)+'</p><pre style="white-space:pre-wrap;line-height:1.65;color:var(--text)">'+escapeHtml(ex.lines.map((line,j)=>(j+1)+': '+line).join('\n'))+'</pre><details><summary>Verwacht resultaat (generatorcontrole)</summary><pre style="white-space:pre-wrap;color:var(--muted)">'+escapeHtml(ex.expected.join('\n'))+'</pre></details></div>').join('');
- showModal('<div class="eyebrow">GENERATOR LAB // EXPERIMENT V'+escapeHtml(APP_VERSION)+'</div><h3>Dynamische opdrachten</h3><p>Test reproduceerbare opdrachten. De preview is een testomgeving; Character Delete is nu ook speelbaar als dynamische quest. De overige levels blijven ongewijzigd.</p><label class="tiny" for="generatorSeed">SEED</label><input id="generatorSeed" maxlength="80" value="'+escapeHtml(seed)+'" style="width:100%;margin:6px 0 12px;padding:10px;border:1px solid var(--edge);background:var(--panel2);color:var(--text)"><div class="row" style="flex-wrap:wrap;gap:10px"><label>Skill <select id="generatorSkill">'+choices(['insert','delete','change'],skill)+'</select></label><label>Moeilijkheid <select id="generatorDifficulty">'+choices(['beginner','apprentice','warrior'],difficulty)+'</select></label></div><p class="tiny">Generator '+QUEST_GENERATOR_VERSION+' · cursor altijd 1:1 · dezelfde seed + instellingen = dezelfde opdrachten</p>'+previews+'<div class="modalactions"><button class="btn" id="generatorNew">NIEUWE SEED</button><button class="btn primary" id="generatorAgain">GENEREER OPNIEUW</button><button class="btn" id="generatorClose">SLUITEN</button></div>');
+ showModal('<div class="eyebrow">GENERATOR LAB // EXPERIMENT V'+escapeHtml(APP_VERSION)+'</div><h3>Dynamische opdrachten</h3><p>Test reproduceerbare opdrachten. De preview is een testomgeving; de Insert- en Change-levels zijn nu ook dynamisch speelbaar.</p><label class="tiny" for="generatorSeed">SEED</label><input id="generatorSeed" maxlength="80" value="'+escapeHtml(seed)+'" style="width:100%;margin:6px 0 12px;padding:10px;border:1px solid var(--edge);background:var(--panel2);color:var(--text)"><div class="row" style="flex-wrap:wrap;gap:10px"><label>Skill <select id="generatorSkill">'+choices(['insert','delete','change'],skill)+'</select></label><label>Moeilijkheid <select id="generatorDifficulty">'+choices(['beginner','apprentice','warrior'],difficulty)+'</select></label></div><p class="tiny">Generator '+QUEST_GENERATOR_VERSION+' · cursor altijd 1:1 · dezelfde seed + instellingen = dezelfde opdrachten</p>'+previews+'<div class="modalactions"><button class="btn" id="generatorNew">NIEUWE SEED</button><button class="btn primary" id="generatorAgain">GENEREER OPNIEUW</button><button class="btn" id="generatorClose">SLUITEN</button></div>');
  const next=()=>[$('generatorSeed').value,$('generatorSkill').value,$('generatorDifficulty').value];
  $('generatorAgain').onclick=()=>showGeneratorLab(...next());
  $('generatorNew').onclick=()=>{const [,sk,df]=next();showGeneratorLab(String(Date.now()),sk,df)};
