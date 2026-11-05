@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.9.1'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.10.0'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -513,6 +513,7 @@ const LESSONS=[
  [{keys:['dd'],text:'Verwijder de volledige huidige regel.'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
 ];
 let waypointIndex=0,roundIndex=0,questReady=true;
+let roundKeys=0,roundHints=0,roundCorrections=false,roundScores=[];
 let generatedQuestRounds=null,questRunCounter=0,currentQuestSeed='';
 function currentRounds(){return generatedQuestRounds||EXTRA_ROUNDS[LEVELS[idx].id]}
 function currentExercise(){return currentRounds()[roundIndex]}
@@ -540,7 +541,7 @@ function advanceWaypoints(){
  return true;
 }
 function prepareRound(r){
- roundIndex=r;waypointIndex=0;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
+ roundIndex=r;waypointIndex=0;roundKeys=0;roundHints=0;roundCorrections=false;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
  mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];searchTerm='';searchMatch=null;lastMessage='';
  if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
  if(ex.setup?.undoStates){undo=ex.setup.undoStates.map(state=>({lines:[...state],row:0,col:0}));}
@@ -562,9 +563,9 @@ function showQuestBriefing(){
  $('backToKeys').onclick=showLesson;
  $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
 }
-const STORAGE='viquest.v3';const BOARD='viquest.board.v2';
+const STORAGE='viquest.v4';const BOARD='viquest.board.v3';
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-let data=read(STORAGE,null);if(!data){const prior=read('viquest.v2',null)||read('viquest.v1',null);data={name:prior?.name||'',unlocked:1,bests:{},completed:{}}}
+let data=read(STORAGE,null);if(!data){const prior=read('viquest.v3',null)||read('viquest.v2',null)||read('viquest.v1',null);data={name:prior?.name||'',unlocked:1,bests:{},completed:{}}}
 let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],redo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
 const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
 const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
@@ -573,7 +574,7 @@ function nextWord(){let rr=row,cc=col+1;while(rr<lines.length){let s=lines[rr];i
 function prevWord(){let rr=row,cc=col-1;while(rr>=0){let s=lines[rr];if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}while(cc>=0&&charClass(s[cc])==='space')cc--;if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}let t=charClass(s[cc]);while(cc>0&&charClass(s[cc-1])===t)cc--;setCursor(rr,cc);return}}
 function endWord(){let s=lines[row],c=col+1,r=row;while(r<lines.length){s=lines[r];while(c<s.length&&charClass(s[c])==='space')c++;if(c<s.length){let t=charClass(s[c]);while(c+1<s.length&&charClass(s[c+1])===t)c++;setCursor(r,c);return}r++;c=0}}
 function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift();redo=[]}
-function performUndo(){const x=undo.pop();if(x){redo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}function performRedo(){const x=redo.pop();if(x){undo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging opnieuw uitgevoerd.')}else notice('Niets om opnieuw uit te voeren.')}
+function performUndo(){const x=undo.pop();if(x){markQuestCorrection();redo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}function performRedo(){const x=redo.pop();if(x){markQuestCorrection();undo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging opnieuw uitgevoerd.')}else notice('Niets om opnieuw uit te voeren.')}
 function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.length>1)lines.splice(row,1);else lines[0]='';setCursor(Math.min(row,lines.length-1),0)}
 function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
 function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
@@ -616,6 +617,63 @@ function findSearch(term,fromAfter=true){if(!term)return false;let startR=row,st
 function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=>{if(!finished){elapsed=Math.floor((Date.now()-started)/1000);$('timer').textContent=fmtTime(elapsed)}},250)}function fmtTime(t){return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function notice(s){lastMessage=s;$('notification').textContent=s}
 function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':count?('COUNT: '+count+' · wacht op beweging'):'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
+
+// v1.10 scoring: deterministic conservative benchmarks, not forced keystroke scripts.
+// Each round gets an equal portion of 1000 base, 300 efficiency and 200 clean XP.
+const SCORE_MAX=1500;
+const SCORE_RANKS=[['S','Legend',1400],['A','Master',1250],['B','Warrior',1100],['C','Apprentice',900],['D','Novice',0]];
+function questRank(score){return SCORE_RANKS.find(rank=>score>=rank[2])}
+function referenceQuestKeys(ex){
+ if(Number.isInteger(ex.referenceKeys)&&ex.referenceKeys>0)return ex.referenceKeys;
+ const kind=ex.metadata?.solutionKind||'';
+ if(kind==='undo')return 1;
+ if(kind==='word-runner')return Math.max(2,ex.waypoints.length*3);
+ if(kind==='movement-basic')return Math.max(1,ex.target[0]+ex.target[1]);
+ if(kind==='movement-edges')return Math.max(2,ex.target[0]+1+(ex.target[1]?1:0));
+ if(kind==='movement-warp')return ex.target[0]===0?2:Math.min(4,ex.target[0]+1);
+ if(kind==='search-hunter'){
+  const match=ex.goal.match(/(?:woord |van )([a-z]+)(?:,| op| en)/);
+  const token=match?.[1]||ex.lines[ex.target[0]].split(' ')[0];
+  const hits=ex.lines.join(' ').split(token).length-1;
+  return Math.max(3,token.length+2+(hits>1?Math.min(hits-1,3):0));
+ }
+ if(kind==='find-target')return ex.target[0]+(ex.goal.includes('tweede')?4:2);
+ if(kind==='copy-paste')return ex.round===3?14:Math.max(4,ex.lines.length+2);
+ const before=ex.lines,after=ex.expected;
+ const differences=Math.max(before.length,after.length);
+ let changes=0,characters=0,navigation=0;
+ for(let i=0;i<differences;i++){
+  const a=before[i]??'',b=after[i]??'';
+  if(a===b)continue;
+  changes++;
+  let start=0;while(start<a.length&&start<b.length&&a[start]===b[start])start++;
+  let suffix=0;while(suffix<a.length-start&&suffix<b.length-start&&a[a.length-1-suffix]===b[b.length-1-suffix])suffix++;
+  characters+=Math.max(a.length-start-suffix,b.length-start-suffix);
+  navigation+=Math.min(i,4)+Math.min(4,Math.ceil(start/5));
+ }
+ return Math.max(2,characters+changes*2+navigation+Math.abs(after.length-before.length)*2);
+}
+function scoreQuestRound(ex,used,hints,corrected,totalRounds){
+ const n=Math.max(1,totalRounds),base=1000/n;
+ const benchmark=referenceQuestKeys(ex);
+ const efficiency=300/n*Math.min(1,benchmark/Math.max(1,used));
+ const clean=hints>0?0:corrected?100/n:200/n;
+ const penalty=100*hints;
+ return {base,efficiency,clean,penalty,benchmark,used,hints,corrected,
+  total:Math.max(0,base+efficiency+clean-penalty)};
+}
+function scoreQuestRun(scores){
+ const sum=(field)=>scores.reduce((n,x)=>n+x[field],0);
+ const base=Math.round(sum('base')),efficiency=Math.round(sum('efficiency')),
+  clean=Math.round(sum('clean')),penalty=sum('penalty');
+ const score=Math.max(0,Math.round(scores.reduce((n,x)=>n+x.total,0)));
+ return {base,efficiency,clean,penalty,score,rank:questRank(score),rounds:scores};
+}
+function markQuestCorrection(){
+ // Undo and Redo are the purpose of this tutorial, not mistakes.
+ if(LEVELS[idx].id!=='06')roundCorrections=true;
+}
+
 function levelComplete(){
  const ex=currentExercise();
  if(ex.waypoints&&waypointIndex<ex.waypoints.length)return false;
@@ -630,12 +688,37 @@ function evaluate(){
   advanceWaypoints();
   if(!levelComplete())return;
  }
- if(levelComplete()&&roundIndex<currentRounds().length-1){
-  prepareRound(roundIndex+1);notice('Ronde voltooid! Nieuwe opdracht.');render();return;
+ if(!levelComplete())return;
+ const ex=currentExercise();
+ const result=scoreQuestRound(ex,roundKeys,roundHints,roundCorrections,currentRounds().length);
+ roundScores.push(result);
+ if(roundIndex<currentRounds().length-1){
+  const earned=Math.round(result.total);
+  prepareRound(roundIndex+1);notice('Ronde voltooid! +'+earned+' XP · volgende opdracht.');render();return;
  }
- if(levelComplete()){
- finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
-function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
+ finished=true;clearInterval(clock);
+ const summary=scoreQuestRun(roundScores),score=summary.score,rank=summary.rank;
+ const l=LEVELS[idx],prior=data.bests[l.id]||0;
+ data.bests[l.id]=Math.max(prior,score);
+ data.completed[l.id]=true;
+ data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));
+ const total=Object.values(data.bests).reduce((a,b)=>a+b,0);
+ if(score>prior){
+  board=board.filter(entry=>entry.level!==l.id);
+  board.push({name:data.name||'Guest',level:l.id,score,rank:rank[0],at:new Date().toISOString()});
+  board.sort((a,b)=>b.score-a.score);
+ }
+ save();updateSidebar();updateMeta();
+ const summaryRows=[
+  ['Base XP',summary.base],['Efficiency Bonus',summary.efficiency],
+  ['Clean Run Bonus',summary.clean],['Penalty XP',-summary.penalty]
+ ].map(([name,amount])=>'<div class="score-breakdown-row" style="display:flex;justify-content:space-between;gap:16px;margin:5px 0"><span>'+name+'</span><strong>'+(amount>=0?'+':'')+amount+' XP</strong></div>').join('');
+ const rounds=roundScores.map((x,i)=>'<div style="font-size:12px;color:var(--muted)">Ronde '+(i+1)+': '+Math.round(x.total)+' XP · '+x.used+' toetsen · referentie '+x.benchmark+'</div>').join('');
+ showModal('<div class="eyebrow">MISSION COMPLETE // '+l.id+'</div><h3>LEVEL CLEARED ✓ · RANK '+rank[0]+'</h3><p>'+rank[1]+' · '+score+' / '+SCORE_MAX+' XP</p><div class="successrow"><div><b>+'+score+'</b><span>XP DEZE RUN</span></div><div><b>'+keys+'</b><span>TOETSEN</span></div><div><b>'+fmtTime(elapsed)+'</b><span>TIJD (NIET GESCOORD)</span></div></div><div class="quest-preview">'+summaryRows+'</div><details><summary>Score per ronde</summary>'+rounds+'</details><p>Beste levelscore: <strong>'+data.bests[l.id]+' XP</strong> · Totale XP: <strong>'+total+'</strong></p><div class="modalactions"><button class="btn" id="retryLevel">OPNIEUW</button><button class="btn primary" id="nextLevel">'+(idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →')+'</button></div>');
+ $('retryLevel').onclick=()=>{closeModal();loadLevel(idx)};
+ $('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()};
+}
+
 function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
 if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){jumpToLine(count?Number(count):1);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='d'&&k==='w'){deleteWord(false);count='';return}if(p==='d'&&k==='e'){deleteWord(true);count='';return}if(p==='c'&&k==='c'){snapshot();lines[row]='';setCursor(row,0);mode='insert';count='';return}if(p==='r'&&k.length===1){snapshot();if(col<lines[row].length)lines[row]=lines[row].slice(0,col)+k+lines[row].slice(col+1);count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
 if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
@@ -648,7 +731,7 @@ function inputKey(e){
  if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
  if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key.toLowerCase()==='r'){
  e.preventDefault();if(!questReady||finished||mode!=='normal')return;
- if(!started)startTimer();keys++;history.push('Ctrl+r');if(history.length>40)history.shift();performRedo();render();evaluate();return;
+ if(!started)startTimer();keys++;roundKeys++;history.push('Ctrl+r');if(history.length>40)history.shift();performRedo();render();evaluate();return;
  }
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(!questReady)return;
@@ -663,7 +746,7 @@ function inputKey(e){
  }
  if(!started)startTimer();
  if(finished)return;
- keys++;
+ keys++;roundKeys++;
  history.push(k==='Enter'?'↵':k==='Backspace'?'⌫':k==='Delete'?'⌦':k===' '?'␣':k);
  if(history.length>40)history.shift();
  lastMessage='';
@@ -672,9 +755,9 @@ function inputKey(e){
   else if(k!=='Backspace'&&k!=='Enter')handleNormal(k);
  }else if(mode==='insert'){
   if(k==='Backspace'){
-   if(col>0){snapshot();lines[row]=lines[row].slice(0,col-1)+lines[row].slice(col);col--}
-   else if(row>0){snapshot();let len=lines[row-1].length;lines[row-1]+=lines[row];lines.splice(row,1);row--;col=len}
-  }else if(k==='Delete')deleteForward();
+   if(col>0){markQuestCorrection();snapshot();lines[row]=lines[row].slice(0,col-1)+lines[row].slice(col);col--}
+   else if(row>0){markQuestCorrection();snapshot();let len=lines[row-1].length;lines[row-1]+=lines[row];lines.splice(row,1);row--;col=len}
+  }else if(k==='Delete'){markQuestCorrection();deleteForward();}
   else if(k==='Enter'){
    snapshot();let tail=lines[row].slice(col);lines[row]=lines[row].slice(0,col);lines.splice(row+1,0,tail);row++;col=0;
   }else if(k.length===1)insertText(k);
@@ -698,7 +781,7 @@ function inputKey(e){
 function loadLevel(i){
  if(!TEST_ALL_LEVELS&&i+1>data.unlocked)return;
  clearInterval(clock);idx=i;const l=LEVELS[i];
- mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;waypointIndex=0;
+ mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;waypointIndex=0;roundScores=[];roundKeys=0;roundHints=0;roundCorrections=false;
  currentQuestSeed='run-'+Date.now()+'-'+(++questRunCounter);
  generatedQuestRounds=dynamicQuestForLevel(l.id,currentQuestSeed);
  prepareRound(0);
@@ -728,9 +811,9 @@ function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginne
 }
 
 function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a I A o O</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw de dd D</span> verwijderen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">r s cw cc C</span> veranderen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
-function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
+function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:2,scoringVersion:'1.10',exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
 function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
-$('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('generatorBtn').onclick=()=>showGeneratorLab('demo-001');$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});// Keyboard-first dialogs: Enter activates exactly the visible green primary action.
+$('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('generatorBtn').onclick=()=>showGeneratorLab('demo-001');$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;roundHints++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});// Keyboard-first dialogs: Enter activates exactly the visible green primary action.
 // Capture the event before focused inputs/buttons handle it, to avoid double actions.
 function handleModalEnter(e){
  if(e.key!=='Enter'||e.isComposing||e.repeat||!$('overlay').classList.contains('visible'))return;
