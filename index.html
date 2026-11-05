@@ -17,13 +17,13 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.5.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.5.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
 // Existing quests intentionally continue to use EXTRA_ROUNDS until migrated.
-const QUEST_GENERATOR_VERSION = 1;
-const QUEST_TOKENS = Object.freeze(['rune','vexa','nori','fira','talo','mira','zuno','kavi','luma','sora','bexa','niva']);
+const QUEST_GENERATOR_VERSION = 2;
+const QUEST_TOKENS = Object.freeze(['rune','draak','schild','zwaard','tovenaar','doolhof','kasteel','poort','schat','spreuk','demon','ridder','dolk','helm','kroon','amulet','draaksteen','drank','elf','dwerg','storm','vlam','kristal','toren']);
 function hashQuestSeed(seed){
  let h=2166136261;
  for(const char of String(seed)){h=Math.imul(h^char.charCodeAt(0),16777619)}
@@ -49,10 +49,10 @@ function generateQuestExercise({seed,skill='insert',difficulty='beginner',round=
  const shuffled=[...QUEST_TOKENS];
  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}
  const [left,right,other,extra]=shuffled;
- const prefix=take(['de','een','het']);
+ const prefix=take(['rune','draak','schild','zwaard']);
  const n=difficulty==='beginner'?1:difficulty==='apprentice'?2:3;
  const sentence=prefix+' '+left+' '+right;
- const before=Array.from({length:n},(_,i)=>i===n-1?sentence:'pad '+shuffled[4+i]);
+ const before=Array.from({length:n},(_,i)=>i===n-1?sentence:'poort '+shuffled[4+i]);
  const targetRow=n-1;
  let expected=[...before],goal='',focus='';
  if(skill==='insert'){
@@ -79,6 +79,50 @@ function generateQuestExercise({seed,skill='insert',difficulty='beginner',round=
  validateQuestExercise(result);
  return result;
 }
+
+// Generated Character Delete: one skill, four distinct learning purposes.
+// 0: x-friendly single deletion; 1: X-friendly space before a word;
+// 2: navigation + exact deletion; 3: two changes with free choice of motions.
+function generateCharacterDeleteRound(seed,round){
+ if(!Number.isInteger(round)||round<0||round>3)throw Error('Character Delete heeft vier rondes');
+ const random=seededQuestRandom([QUEST_GENERATOR_VERSION,seed,'character-delete',round].join('|'));
+ const pool=[...QUEST_TOKENS];
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+ const [a,b,c,d,e,f,g,h]=pool;
+ let lines,expected,goal,focus;
+ if(round===0){
+  lines=[a+' '+b+'# '+c];
+  expected=[a+' '+b+' '+c];
+  goal='Verwijder het teken # direct na '+b+'.';
+  focus='x';
+ }else if(round===1){
+  lines=[a+' '+b,c+' '+d];
+  expected=[a+' '+b,c+d];
+  goal='Verwijder de spatie tussen '+c+' en '+d+' op regel 2.';
+  focus='X';
+ }else if(round===2){
+  lines=[a+' '+b,c+' '+d,e+'@'+f];
+  expected=[a+' '+b,c+' '+d,e+f];
+  goal='Verwijder het teken @ tussen '+e+' en '+f+' op regel 3.';
+  focus='combine';
+ }else{
+  lines=[a+' '+b,c+'#'+d,e+' '+f,g+' '+h];
+  expected=[a+' '+b,c+d,e+f,g+h];
+  goal='Verwijder # op regel 2 en de spatie tussen '+g+' en '+h+' op regel 4.';
+  focus='prove';
+ }
+ const exercise={
+  generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:'delete',difficulty:['beginner','apprentice','warrior','warrior'][round],round,
+  lines,start:[0,0],expected,requiredMode:'normal',goal,focus,
+  metadata:{solutionKind:'character-delete',targetRows:round===3?[1,3]:[round===0?0:round===1?1:2]}
+ };
+ validateQuestExercise(exercise);
+ return exercise;
+}
+function makeCharacterDeleteQuest(seed){
+ return Array.from({length:4},(_,round)=>generateCharacterDeleteRound(seed,round));
+}
+
 function validateQuestExercise(ex){
  if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.lines.length!==ex.expected.length)throw Error('Ongeldig opdrachtformaat');
  if(!ex.lines.every(x=>typeof x==='string')||!ex.expected.every(x=>typeof x==='string'))throw Error('Opdracht bevat geen gewone tekst');
@@ -99,7 +143,7 @@ const LEVELS=[
 {id:'05',world:'02 · INSERT',name:"Insert & Append",title:"Tekst tussen letters",file:'05.txt',desc:"Voeg gewone woorden vóór of na een plaats in de tekst toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["vim is great"],start:[0,7],expected:["vim is really great"],requiredMode:'normal',optimal:9,hint:"i begint vóór de cursor; a begint ná de cursor."},
 {id:'06',world:'02 · INSERT',name:"Line Insert",title:"Begin en eind",file:'06.txt',desc:"Voeg de genoemde tekst toe aan het begin of einde van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["  score = 10"],start:[0,7],expected:["  let score = 10"],requiredMode:'normal',optimal:9,hint:"I gaat naar de eerste niet-lege kolom; A naar het regeleinde."},
 {id:'07',world:'02 · INSERT',name:"Open Lines",title:"Nieuwe regels",file:'07.txt',desc:"Voeg nieuwe regels met gewone woorden toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["start","finish"],start:[0,0],expected:["start","middle","finish"],requiredMode:'normal',optimal:9,hint:"o opent een regel eronder; O erboven."},
-{id:'08',world:'03 · DELETE',name:"Character Delete",title:"Vernietig de bug",file:'08.txt',desc:"Verwijder de genoemde extra letter uit een woord.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["// boot","consoole.log(\"hi\");","done();"],start:[0,0],expected:["// boot","console.log(\"hi\");","done();"],requiredMode:'normal',optimal:9,hint:"x verwijdert onder de cursor; X links van de cursor."},
+{id:'08',world:'03 · DELETE',name:"Character Delete",title:"Vernietig de bug",file:'08.txt',desc:"Vier dynamische rondes met fantasywoorden. Verwijder een teken of spatie; gebruik eerder geleerde bewegingen om bij je doel te komen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["// boot","consoole.log(\"hi\");","done();"],start:[0,0],expected:["// boot","console.log(\"hi\");","done();"],requiredMode:'normal',optimal:9,hint:"x verwijdert het teken onder de cursor; X verwijdert het teken links van de cursor. De eindtekst is belangrijker dan de gekozen route."},
 {id:'09',world:'03 · DELETE',name:"Word Delete",title:"Woorden schrappen",file:'09.txt',desc:"Verwijder precies de aangegeven woorden of woorddelen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior"],start:[0,4],expected:["the warrior"],requiredMode:'normal',optimal:9,hint:"dw verwijdert tot het volgende woord; de tot en met het woordeinde."},
 {id:'10',world:'03 · DELETE',name:"Line Slayer",title:"Regels opschonen",file:'10.txt',desc:"Verwijder complete regels of een aangegeven deel van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["keep","REMOVE_ME","keep too"],start:[0,0],expected:["keep","keep too"],requiredMode:'normal',optimal:9,hint:"dd verwijdert een volledige regel; D vanaf de cursor tot het regeleinde."},
 {id:'11',world:'04 · CHANGE',name:"Replace & Substitute",title:"Eén teken veranderen",file:'11.txt',desc:"Vervang de aangegeven letters door nieuwe letters.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the cxt waits"],start:[0,5],expected:["the cat waits"],requiredMode:'normal',optimal:9,hint:"r vervangt één teken; s vervangt een teken en opent INSERT."},
@@ -236,7 +280,8 @@ const LESSONS=[
  [{keys:['dd'],text:'Verwijder de volledige huidige regel.'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
 ];
 let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
-function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
+let generatedDeleteRounds=null,characterDeleteRunCounter=0,characterDeleteSeed='';
+function currentRounds(){return idx===1?WORD_ROUNDS:idx===7&&generatedDeleteRounds?generatedDeleteRounds:EXTRA_ROUNDS[LEVELS[idx].id]}
 function currentExercise(){return idx===1?null:currentRounds()[roundIndex]}
 function wordPosition(round,step){const r=WORD_ROUNDS[round],g=r.goals[step],index=g[0];let start=0;for(let i=0;i<index;i++)start+=r.words[i].length+1;return [0,start+(g[1]==='last'?r.words[index].length-1:0)]}
 function wordTaskText(){const r=WORD_ROUNDS[wordRound],g=r.goals[wordStep];return `${g[1]==='first'?'eerste':'laatste'} letter van <b>${r.words[g[0]]}</b>`}
@@ -409,6 +454,7 @@ function loadLevel(i){
  if(i+1>data.unlocked)return;
  clearInterval(clock);idx=i;const l=LEVELS[i];
  mode='normal';pending='';count='';command='';reg=null;undo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
+ if(idx===7){characterDeleteSeed='run-'+Date.now()+'-'+(++characterDeleteRunCounter);generatedDeleteRounds=makeCharacterDeleteQuest(characterDeleteSeed)}else{generatedDeleteRounds=null}
  if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
  else prepareRound(0);
  $('stageLabel').textContent='TRIAL '+l.id+' / '+LEVELS.length+' · '+l.world;
@@ -425,10 +471,10 @@ function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">
 function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginner'){
  introStage='';
  const seed=String(seedValue),skill=skillValue,difficulty=difficultyValue;
- const generated=Array.from({length:4},(_,round)=>generateQuestExercise({seed,skill,difficulty,round}));
+ const generated=skill==='delete'?makeCharacterDeleteQuest(seed):Array.from({length:4},(_,round)=>generateQuestExercise({seed,skill,difficulty,round}));
  const choices=(values,selected)=>values.map(value=>'<option value="'+escapeHtml(value)+'"'+(value===selected?' selected':'')+'>'+escapeHtml(value)+'</option>').join('');
  const previews=generated.map((ex,i)=>'<div class="quest-preview" style="margin:10px 0"><strong>RONDE '+(i+1)+'/4</strong><p>'+escapeHtml(ex.goal)+'</p><pre style="white-space:pre-wrap;line-height:1.65;color:var(--text)">'+escapeHtml(ex.lines.map((line,j)=>(j+1)+': '+line).join('\n'))+'</pre><details><summary>Verwacht resultaat (generatorcontrole)</summary><pre style="white-space:pre-wrap;color:var(--muted)">'+escapeHtml(ex.expected.join('\n'))+'</pre></details></div>').join('');
- showModal('<div class="eyebrow">GENERATOR LAB // EXPERIMENT V'+escapeHtml(APP_VERSION)+'</div><h3>Dynamische opdrachten</h3><p>Test reproduceerbare opdrachten. Dit is nog geen speelbare quest: de bestaande levels en scores blijven ongewijzigd.</p><label class="tiny" for="generatorSeed">SEED</label><input id="generatorSeed" maxlength="80" value="'+escapeHtml(seed)+'" style="width:100%;margin:6px 0 12px;padding:10px;border:1px solid var(--edge);background:var(--panel2);color:var(--text)"><div class="row" style="flex-wrap:wrap;gap:10px"><label>Skill <select id="generatorSkill">'+choices(['insert','delete','change'],skill)+'</select></label><label>Moeilijkheid <select id="generatorDifficulty">'+choices(['beginner','apprentice','warrior'],difficulty)+'</select></label></div><p class="tiny">Generator '+QUEST_GENERATOR_VERSION+' · cursor altijd 1:1 · dezelfde seed + instellingen = dezelfde opdrachten</p>'+previews+'<div class="modalactions"><button class="btn" id="generatorNew">NIEUWE SEED</button><button class="btn primary" id="generatorAgain">GENEREER OPNIEUW</button><button class="btn" id="generatorClose">SLUITEN</button></div>');
+ showModal('<div class="eyebrow">GENERATOR LAB // EXPERIMENT V'+escapeHtml(APP_VERSION)+'</div><h3>Dynamische opdrachten</h3><p>Test reproduceerbare opdrachten. De preview is een testomgeving; Character Delete is nu ook speelbaar als dynamische quest. De overige levels blijven ongewijzigd.</p><label class="tiny" for="generatorSeed">SEED</label><input id="generatorSeed" maxlength="80" value="'+escapeHtml(seed)+'" style="width:100%;margin:6px 0 12px;padding:10px;border:1px solid var(--edge);background:var(--panel2);color:var(--text)"><div class="row" style="flex-wrap:wrap;gap:10px"><label>Skill <select id="generatorSkill">'+choices(['insert','delete','change'],skill)+'</select></label><label>Moeilijkheid <select id="generatorDifficulty">'+choices(['beginner','apprentice','warrior'],difficulty)+'</select></label></div><p class="tiny">Generator '+QUEST_GENERATOR_VERSION+' · cursor altijd 1:1 · dezelfde seed + instellingen = dezelfde opdrachten</p>'+previews+'<div class="modalactions"><button class="btn" id="generatorNew">NIEUWE SEED</button><button class="btn primary" id="generatorAgain">GENEREER OPNIEUW</button><button class="btn" id="generatorClose">SLUITEN</button></div>');
  const next=()=>[$('generatorSeed').value,$('generatorSkill').value,$('generatorDifficulty').value];
  $('generatorAgain').onclick=()=>showGeneratorLab(...next());
  $('generatorNew').onclick=()=>{const [,sk,df]=next();showGeneratorLab(String(Date.now()),sk,df)};
