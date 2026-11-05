@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.5.1'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.5.2'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -107,7 +107,7 @@ function generateCharacterDeleteRound(seed,round){
   focus='combine';
  }else{
   lines=[a+' '+b,c+'#'+d,e+' '+f,g+' '+h];
-  expected=[a+' '+b,c+d,e+f,g+h];
+  expected=[a+' '+b,c+d,e+' '+f,g+h];
   goal='Verwijder # op regel 2 en de spatie tussen '+g+' en '+h+' op regel 4.';
   focus='prove';
  }
