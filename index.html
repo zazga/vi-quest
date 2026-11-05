@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.8.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.8.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -102,13 +102,16 @@ const DYNAMIC_QUESTS=Object.freeze({
  '09':Object.freeze({skill:'delete',generator:'word-delete',rounds:QUEST_ROUND_TYPES}),
  '10':Object.freeze({skill:'delete',generator:'line-delete',rounds:QUEST_ROUND_TYPES}),
  '11':Object.freeze({skill:'change',generator:'replace-substitute',rounds:QUEST_ROUND_TYPES}),
- '12':Object.freeze({skill:'change',generator:'change-operator',rounds:QUEST_ROUND_TYPES})
+ '12':Object.freeze({skill:'change',generator:'change-operator',rounds:QUEST_ROUND_TYPES}),
+ '13':Object.freeze({skill:'copy',generator:'copy-paste',rounds:QUEST_ROUND_TYPES}),
+ '14':Object.freeze({skill:'undo',generator:'undo',rounds:QUEST_ROUND_TYPES})
 });
 function createDynamicQuest(config,seed){
  if(!config||!config.generator)throw Error('Dynamische quest mist een generator');
  if(config.generator==='character-delete'){
   return config.rounds.map((type,round)=>generateCharacterDeleteRound(seed,round));
  }
+ if(config.generator==='copy-paste'||config.generator==='undo')return config.rounds.map((_,round)=>generateUtilityRound(config.generator,seed,round));
  if(config.generator==='word-delete'||config.generator==='line-delete')return config.rounds.map((_,round)=>generateDynamicDeleteRound(config.generator,seed,round));
  if(config.generator!=='character-delete')return config.rounds.map((_,round)=>generateEditingRound(config.generator,seed,round));
  throw Error('Onbekende questgenerator: '+config.generator);
@@ -242,10 +245,35 @@ function generateDynamicDeleteRound(kind,seed,round){
  validateQuestExercise(ex);return ex;
 }
 
+
+function generateUtilityRound(kind,seed,round){
+ const phase=questRoundType(round),rng=seededQuestRandom([QUEST_GENERATOR_VERSION,seed,kind,round].join('|'));
+ const pool=[...QUEST_TOKENS];for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+ const [a,b,c,d,e,f,g,h]=pool;
+ let lines,expected,goal,focus,setup;
+ if(kind==='copy-paste'){
+  const cases=[
+   [[a,b],[a,b,a],'Voeg een kopie van regel 1 ('+a+') direct onder regel 2 toe.','yy,p'],
+   [[a,b,c],[a,b,c,b],'Voeg een kopie van regel 2 ('+b+') direct onder regel 3 toe.','yy,p'],
+   [[a,b,c,d],[a,c,b,c,d],'Voeg een kopie van regel 3 ('+c+') direct onder regel 1 toe. Behoud alle bestaande regels.','yy,p'],
+   [[a,b,c,d],[a,b,a,c,d,c],'Voeg een kopie van regel 1 ('+a+') direct onder regel 2 toe en voeg een kopie van de oorspronkelijke regel 3 ('+c+') direct onder de oorspronkelijke regel 4 toe.','combine']
+  ];
+  [lines,expected,goal,focus]=cases[round];
+ }else if(kind==='undo'){
+  if(round===0){expected=[a+' '+b,c+' '+d];lines=[a+b,c+' '+d];goal='Herstel de laatste verwijdering. Regel 1 moet exact "'+expected[0]+'" worden.';setup={undoStates:[[...expected]]}}
+  else if(round===1){expected=[a,b,c];lines=[a,c];goal='Maak de laatste verwijdering ongedaan. Herstel de drie regels '+a+', '+b+' en '+c+' in die volgorde.';setup={undoStates:[[...expected]]}}
+  else if(round===2){expected=[a+' '+b,c+' '+d,e+' '+f];const intermediate=[a+b,c+' '+d,e+' '+f];lines=[a+b,c+d,e+' '+f];goal='Maak de laatste twee wijzigingen ongedaan. Regel 1 moet "'+expected[0]+'" worden en regel 2 "'+expected[1]+'".';setup={undoStates:[[...expected],intermediate]}}
+  else{expected=[a+' '+b,c+' '+d,e+' '+f,g+' '+h];const one=[a+b,c+' '+d,e+' '+f,g+' '+h],two=[a+b,c+d,e+' '+f,g+' '+h];lines=[a+b,c+d,e+f,g+' '+h];goal='Maak de laatste drie wijzigingen ongedaan. Herstel regel 1 tot "'+expected[0]+'", regel 2 tot "'+expected[1]+'" en regel 3 tot "'+expected[2]+'".';setup={undoStates:[[...expected],one,two]}}
+  focus='u';
+ }else throw Error('Onbekende utility-generator: '+kind);
+ const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='undo'?'undo':'copy',difficulty:phase.difficulty,round,roundType:phase.id,lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind},...(setup?{setup}:{})};
+ validateQuestExercise(ex);return ex;
+}
+
 function validateQuestExercise(ex){
- if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.expected.length===0||(!['open-lines','line-delete'].includes(ex.metadata?.solutionKind) && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
+ if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.expected.length===0||(!['open-lines','line-delete','copy-paste','undo'].includes(ex.metadata?.solutionKind) && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
  if(!ex.lines.every(x=>typeof x==='string')||!ex.expected.every(x=>typeof x==='string'))throw Error('Opdracht bevat geen gewone tekst');
- if(ex.lines.every((x,i)=>x===ex.expected[i]))throw Error('Opdracht heeft geen wijziging');
+ if(ex.lines.length===ex.expected.length&&ex.lines.every((x,i)=>x===ex.expected[i]))throw Error('Opdracht heeft geen wijziging');
  if(ex.start[0]!==0||ex.start[1]!==0)throw Error('Generator moet op 1:1 starten');
  if(!ex.goal||!ex.skill||!ex.seed)throw Error('Onvolledige generatoropdracht');
  if(ex.roundType && (!Number.isInteger(ex.round)||questRoundType(ex.round).id!==ex.roundType))throw Error('Rondetype en rondenummer komen niet overeen');
@@ -422,6 +450,7 @@ function prepareRound(r){
  roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
  mode='normal';pending='';count='';command='';reg=null;undo=[];searchTerm='';searchMatch=null;lastMessage='';
  if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
+ if(ex.setup?.undoStates){undo=ex.setup.undoStates.map(state=>({lines:[...state],row:0,col:0}));}
  updateWordUI();render();
 }
 function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
