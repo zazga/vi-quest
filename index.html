@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.8.1'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.8.2'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -96,15 +96,15 @@ function questRoundType(round){
 }
 const DYNAMIC_QUESTS=Object.freeze({
  '05':Object.freeze({skill:'insert',generator:'insert-append',rounds:QUEST_ROUND_TYPES}),
- '06':Object.freeze({skill:'insert',generator:'line-insert',rounds:QUEST_ROUND_TYPES}),
- '07':Object.freeze({skill:'insert',generator:'open-lines',rounds:QUEST_ROUND_TYPES}),
- '08':Object.freeze({skill:'delete',generator:'character-delete',rounds:QUEST_ROUND_TYPES}),
- '09':Object.freeze({skill:'delete',generator:'word-delete',rounds:QUEST_ROUND_TYPES}),
- '10':Object.freeze({skill:'delete',generator:'line-delete',rounds:QUEST_ROUND_TYPES}),
- '11':Object.freeze({skill:'change',generator:'replace-substitute',rounds:QUEST_ROUND_TYPES}),
- '12':Object.freeze({skill:'change',generator:'change-operator',rounds:QUEST_ROUND_TYPES}),
- '13':Object.freeze({skill:'copy',generator:'copy-paste',rounds:QUEST_ROUND_TYPES}),
- '14':Object.freeze({skill:'undo',generator:'undo',rounds:QUEST_ROUND_TYPES})
+ '07':Object.freeze({skill:'insert',generator:'line-insert',rounds:QUEST_ROUND_TYPES}),
+ '08':Object.freeze({skill:'insert',generator:'open-lines',rounds:QUEST_ROUND_TYPES}),
+ '09':Object.freeze({skill:'delete',generator:'character-delete',rounds:QUEST_ROUND_TYPES}),
+ '10':Object.freeze({skill:'delete',generator:'word-delete',rounds:QUEST_ROUND_TYPES}),
+ '11':Object.freeze({skill:'delete',generator:'line-delete',rounds:QUEST_ROUND_TYPES}),
+ '12':Object.freeze({skill:'change',generator:'replace-substitute',rounds:QUEST_ROUND_TYPES}),
+ '13':Object.freeze({skill:'change',generator:'change-operator',rounds:QUEST_ROUND_TYPES}),
+ '14':Object.freeze({skill:'copy',generator:'copy-paste',rounds:QUEST_ROUND_TYPES}),
+ '06':Object.freeze({skill:'undo',generator:'undo',rounds:QUEST_ROUND_TYPES.slice(0,2)})
 });
 function createDynamicQuest(config,seed){
  if(!config||!config.generator)throw Error('Dynamische quest mist een generator');
@@ -260,11 +260,9 @@ function generateUtilityRound(kind,seed,round){
   ];
   [lines,expected,goal,focus]=cases[round];
  }else if(kind==='undo'){
-  if(round===0){expected=[a+' '+b,c+' '+d];lines=[a+b,c+' '+d];goal='Herstel de laatste verwijdering. Regel 1 moet exact "'+expected[0]+'" worden.';setup={undoStates:[[...expected]]}}
-  else if(round===1){expected=[a,b,c];lines=[a,c];goal='Maak de laatste verwijdering ongedaan. Herstel de drie regels '+a+', '+b+' en '+c+' in die volgorde.';setup={undoStates:[[...expected]]}}
-  else if(round===2){expected=[a+' '+b,c+' '+d,e+' '+f];const intermediate=[a+b,c+' '+d,e+' '+f];lines=[a+b,c+d,e+' '+f];goal='Maak de laatste twee wijzigingen ongedaan. Regel 1 moet "'+expected[0]+'" worden en regel 2 "'+expected[1]+'".';setup={undoStates:[[...expected],intermediate]}}
-  else{expected=[a+' '+b,c+' '+d,e+' '+f,g+' '+h];const one=[a+b,c+' '+d,e+' '+f,g+' '+h],two=[a+b,c+d,e+' '+f,g+' '+h];lines=[a+b,c+d,e+f,g+' '+h];goal='Maak de laatste drie wijzigingen ongedaan. Herstel regel 1 tot "'+expected[0]+'", regel 2 tot "'+expected[1]+'" en regel 3 tot "'+expected[2]+'".';setup={undoStates:[[...expected],one,two]}}
-  focus='u';
+  if(round===0){expected=[a+' '+b,c+' '+d];lines=[a+b,c+' '+d];goal='Herstel de laatst verwijderde spatie tussen '+a+' en '+b+' op regel 1.';focus='u';setup={undoStates:[[...expected]]};}
+  else if(round===1){lines=[a,b];expected=[a,b,c];goal='Herstel de eerder ongedaan gemaakte toevoeging: zet '+c+' weer terug als regel 3.';focus='Ctrl+r';setup={redoStates:[[...expected]]};}
+  else throw Error('Undo heeft twee basisrondes');
  }else throw Error('Onbekende utility-generator: '+kind);
  const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='undo'?'undo':'copy',difficulty:phase.difficulty,round,roundType:phase.id,lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind},...(setup?{setup}:{})};
  validateQuestExercise(ex);return ex;
@@ -289,15 +287,15 @@ const LEVELS=[
 {id:'03',world:'01 · MOVEMENT',name:'Edge of Line',title:'De rand van de wereld',file:'edges.txt',desc:'Leer binnen één regel direct naar het begin of einde te springen met 0 en $.',goal:'Plaats de cursor op de <b>!</b> aan het einde van de regel.',lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],optimal:1,hint:'Met 0 spring je naar het begin van de regel en met $ naar het laatste teken.'},
 {id:'04',world:'01 · MOVEMENT',name:'Warp Jump',title:'Teleporteren door tekst',file:'warp.txt',desc:'Leer door het hele bestand springen: gg voor de eerste regel, G voor de laatste en numberG om rechtstreeks naar een specifieke regel te gaan.',goal:'Bereik de aangegeven regel in het bestand.',lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],optimal:2,hint:'gg gaat naar de eerste regel, G naar de laatste regel en bijvoorbeeld 3G direct naar regel 3.'},
 {id:'05',world:'02 · INSERT',name:"Insert & Append",title:"Tekst tussen letters",file:'05.txt',desc:"Voeg gewone woorden vóór of na een plaats in de tekst toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["vim is great"],start:[0,7],expected:["vim is really great"],requiredMode:'normal',optimal:9,hint:"i begint vóór de cursor; a begint ná de cursor."},
-{id:'06',world:'02 · INSERT',name:"Line Insert",title:"Begin en eind",file:'06.txt',desc:"Voeg de genoemde tekst toe aan het begin of einde van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["  score = 10"],start:[0,7],expected:["  let score = 10"],requiredMode:'normal',optimal:9,hint:"I gaat naar de eerste niet-lege kolom; A naar het regeleinde."},
-{id:'07',world:'02 · INSERT',name:"Open Lines",title:"Nieuwe regels",file:'07.txt',desc:"Voeg nieuwe regels met gewone woorden toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["start","finish"],start:[0,0],expected:["start","middle","finish"],requiredMode:'normal',optimal:9,hint:"o opent een regel eronder; O erboven."},
-{id:'08',world:'03 · DELETE',name:"Character Delete",title:"Vernietig de bug",file:'08.txt',desc:"Vier dynamische rondes met fantasywoorden. Verwijder een teken of spatie; gebruik eerder geleerde bewegingen om bij je doel te komen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["// boot","consoole.log(\"hi\");","done();"],start:[0,0],expected:["// boot","console.log(\"hi\");","done();"],requiredMode:'normal',optimal:9,hint:"x verwijdert het teken onder de cursor; X verwijdert het teken links van de cursor. De eindtekst is belangrijker dan de gekozen route."},
-{id:'09',world:'03 · DELETE',name:"Word Delete",title:"Woorden schrappen",file:'09.txt',desc:"Verwijder precies de aangegeven woorden of woorddelen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior"],start:[0,4],expected:["the warrior"],requiredMode:'normal',optimal:9,hint:"dw verwijdert tot het volgende woord; de tot en met het woordeinde."},
-{id:'10',world:'03 · DELETE',name:"Line Slayer",title:"Regels opschonen",file:'10.txt',desc:"Verwijder complete regels of een aangegeven deel van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["keep","REMOVE_ME","keep too"],start:[0,0],expected:["keep","keep too"],requiredMode:'normal',optimal:9,hint:"dd verwijdert een volledige regel; D vanaf de cursor tot het regeleinde."},
-{id:'11',world:'04 · CHANGE',name:"Replace & Substitute",title:"Eén teken veranderen",file:'11.txt',desc:"Vervang de aangegeven letters door nieuwe letters.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the cxt waits"],start:[0,5],expected:["the cat waits"],requiredMode:'normal',optimal:9,hint:"r vervangt één teken; s vervangt een teken en opent INSERT."},
-{id:'12',world:'04 · CHANGE',name:"Change Operator",title:"Herschrijf het lot",file:'12.txt',desc:"Vervang woorden, regeldelen of een hele regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior rises"],start:[0,4],expected:["the strong warrior rises"],requiredMode:'normal',optimal:9,hint:"cw wijzigt een woord; cc een regel; C de rest van de regel."},
-{id:'13',world:'05 · POWER MOVES',name:'Copy / Paste',title:'De kloonkamer',file:'clone.txt',desc:'Met yank en put dupliceer je regels zonder opnieuw te typen.',goal:'Maak een tweede regel met exact <b>echo "vim"</b>.',lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],optimal:3,hint:'yy kopieert de hele regel. p plakt die eronder.'},
-{id:'14',world:'05 · POWER MOVES',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Fouten herstellen is sneller dan perfect zijn. De undo-stack is jouw tijdmachine.',goal:'Herstel de oorspronkelijke tekst <b>never give up</b>.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
+{id:'06',world:'02 · INSERT',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Leer Undo en Redo direct na je eerste tekstbewerking.',goal:'Herstel de oorspronkelijke tekst <b>never give up</b>.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
+{id:'07',world:'02 · INSERT',name:"Line Insert",title:"Begin en eind",file:'07.txt',desc:"Voeg de genoemde tekst toe aan het begin of einde van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["  score = 10"],start:[0,7],expected:["  let score = 10"],requiredMode:'normal',optimal:9,hint:"I gaat naar de eerste niet-lege kolom; A naar het regeleinde."},
+{id:'08',world:'02 · INSERT',name:"Open Lines",title:"Nieuwe regels",file:'08.txt',desc:"Voeg nieuwe regels met gewone woorden toe.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["start","finish"],start:[0,0],expected:["start","middle","finish"],requiredMode:'normal',optimal:9,hint:"o opent een regel eronder; O erboven."},
+{id:'09',world:'03 · DELETE',name:"Character Delete",title:"Vernietig de bug",file:'09.txt',desc:"Vier dynamische rondes met fantasywoorden. Verwijder een teken of spatie; gebruik eerder geleerde bewegingen om bij je doel te komen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["// boot","consoole.log(\"hi\");","done();"],start:[0,0],expected:["// boot","console.log(\"hi\");","done();"],requiredMode:'normal',optimal:9,hint:"x verwijdert het teken onder de cursor; X verwijdert het teken links van de cursor. De eindtekst is belangrijker dan de gekozen route."},
+{id:'10',world:'03 · DELETE',name:"Word Delete",title:"Woorden schrappen",file:'10.txt',desc:"Verwijder precies de aangegeven woorden of woorddelen.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior"],start:[0,4],expected:["the warrior"],requiredMode:'normal',optimal:9,hint:"dw verwijdert tot het volgende woord; de tot en met het woordeinde."},
+{id:'11',world:'03 · DELETE',name:"Line Slayer",title:"Regels opschonen",file:'11.txt',desc:"Verwijder complete regels of een aangegeven deel van een regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["keep","REMOVE_ME","keep too"],start:[0,0],expected:["keep","keep too"],requiredMode:'normal',optimal:9,hint:"dd verwijdert een volledige regel; D vanaf de cursor tot het regeleinde."},
+{id:'12',world:'04 · CHANGE',name:"Replace & Substitute",title:"Eén teken veranderen",file:'12.txt',desc:"Vervang de aangegeven letters door nieuwe letters.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the cxt waits"],start:[0,5],expected:["the cat waits"],requiredMode:'normal',optimal:9,hint:"r vervangt één teken; s vervangt een teken en opent INSERT."},
+{id:'13',world:'04 · CHANGE',name:"Change Operator",title:"Herschrijf het lot",file:'13.txt',desc:"Vervang woorden, regeldelen of een hele regel.",goal:'Bereik de gevraagde tekst zonder andere inhoud te veranderen.',lines:["the weak warrior rises"],start:[0,4],expected:["the strong warrior rises"],requiredMode:'normal',optimal:9,hint:"cw wijzigt een woord; cc een regel; C de rest van de regel."},
+{id:'14',world:'05 · POWER MOVES',name:'Copy / Paste',title:'De kloonkamer',file:'clone.txt',desc:'Met yank en put dupliceer je regels zonder opnieuw te typen.',goal:'Maak een tweede regel met exact <b>echo "vim"</b>.',lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],optimal:3,hint:'yy kopieert de hele regel. p plakt die eronder.'},
 {id:'15',world:'05 · POWER MOVES',name:'Search Hunter',title:'De jacht op de schaduw',file:'search.txt',desc:'Vind een doelwit in een groot bestand met de zoekopdracht / en Enter.',goal:'Bereik de eerste letter van <b>shadow</b>.',lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],optimal:8,hint:'Typ /shadow en druk Enter.'},
 {id:'16',world:'06 · MASTERY',name:'Find the Target',title:'Precisiesprong',file:'precision.txt',desc:'Ga direct naar een karakter op de huidige regel met f gevolgd door het karakter.',goal:'Spring naar de <b>@</b> op deze regel.',lines:['path ....... @ treasure'],start:[0,0],target:[0,13],optimal:2,hint:'f@ springt naar de eerstvolgende @ op de huidige regel.'},
 {id:'17',world:'06 · MASTERY',name:'Final Boss',title:'The Keyboard Warrior',file:'boss.txt',desc:'Je laatste uitdaging: navigeer, verwijder de corrupte regel en herstel de ontbrekende tekst. Snelheid én precisie tellen.',goal:'Houd alleen <b>QUEST COMPLETE</b> en <b>YOU ARE A VIM WARRIOR</b> over, in die volgorde. Eindig in normal mode.',lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',optimal:9,hint:'dd verwijdert de corrupte regel. Ga daarna met G en $ naar het einde, gebruik a om IOR toe te voegen, en Esc.'}];
@@ -310,31 +308,31 @@ const WORD_ROUNDS=[
 ];
 // Four increasingly varied exercises per level. Level 02 retains its checkpoint course.
 const EXTRA_ROUNDS={
-  '10':[
+  '11':[
     {lines:["bewaar deze regel","VERWIJDER DEZE REGEL","en bewaar deze ook"],start:[0,0],expected:["bewaar deze regel","en bewaar deze ook"],requiredMode:'normal',goal:"Verwijder de volledige regel <b>VERWIJDER DEZE REGEL</b>."},
     {lines:["het kasteel staat VERWIJDER DIT"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Verwijder <b> VERWIJDER DIT</b> uit regel 1."},
     {lines:["DIT MAG WEG","de reis begint"],start:[0,0],expected:["de reis begint"],requiredMode:'normal',goal:"Verwijder de volledige eerste regel <b>DIT MAG WEG</b>."},
     {lines:["de maan schijnt EXTRA TEKST"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Verwijder <b> EXTRA TEKST</b> uit regel 1."}
   ],
-  '11':[
+  '12':[
     {lines:["de kxt loopt"],start:[0,0],expected:["de kat loopt"],requiredMode:'normal',goal:"Vervang de <b>x</b> in <b>kxt</b> door <b>a</b>."},
     {lines:["de grote b0om"],start:[0,0],expected:["de grote boom"],requiredMode:'normal',goal:"Vervang de <b>0</b> in <b>b0om</b> door <b>o</b>."},
     {lines:["de mXan schijnt"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Vervang de <b>X</b> in <b>mXan</b> door <b>a</b>."},
     {lines:["het gr0ene bos"],start:[0,0],expected:["het groene bos"],requiredMode:'normal',goal:"Vervang de <b>0</b> in <b>gr0ene</b> door <b>o</b>."}
   ],
-  '12':[
+  '13':[
     {lines:["de kleine draak"],start:[0,0],expected:["de grote draak"],requiredMode:'normal',goal:"Vervang <b>kleine</b> door <b>grote</b>."},
     {lines:["een oude zin"],start:[0,0],expected:["een volledig nieuwe zin"],requiredMode:'normal',goal:"Vervang de volledige eerste regel door <b>een volledig nieuwe zin</b>."},
     {lines:["de maan is blauw"],start:[0,0],expected:["de maan is helder"],requiredMode:'normal',goal:"Vervang <b>blauw</b> door <b>helder</b>."},
     {lines:["een slome schildpad"],start:[0,0],expected:["een snelle schildpad"],requiredMode:'normal',goal:"Vervang <b>slome</b> door <b>snelle</b>."}
   ],
-  '13':[
+  '14':[
     {lines:["de draak slaapt"],start:[0,0],expected:["de draak slaapt","de draak slaapt"],requiredMode:'normal',goal:"Zet <b>de draak slaapt</b> twee keer onder elkaar."},
     {lines:["een gouden sleutel"],start:[0,0],expected:["een gouden sleutel","een gouden sleutel"],requiredMode:'normal',goal:"Maak een tweede regel met exact <b>een gouden sleutel</b>."},
     {lines:["het bos is stil"],start:[0,0],expected:["het bos is stil","het bos is stil"],requiredMode:'normal',goal:"Maak een kopie van de eerste regel op de regel eronder."},
     {lines:["de reis begint"],start:[0,0],expected:["de reis begint","de reis begint"],requiredMode:'normal',goal:"Zet <b>de reis begint</b> twee keer onder elkaar."}
   ],
-  '14':[
+  '06':[
         {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Herstel de originele tekst <b>never give up</b>.'},
     {lines:['practice makes perfect'],start:[0,0],setup:'deleteLast',expected:['practice makes perfect'],goal:'Herstel de ontbrekende laatste letter.'},
     {lines:['vim is a superpower'],start:[0,0],setup:'deleteLast',expected:['vim is a superpower'],goal:'Herstel de originele tekst <b>vim is a superpower</b>.'},
@@ -382,25 +380,25 @@ const EXTRA_ROUNDS={
     {lines:["een open deur","de grote toren"],start:[0,0],expected:["een open deur","de zeer grote toren"],requiredMode:'normal',goal:"Voeg <b>zeer </b> toe vóór <b>grote</b> op regel 2."},
     {lines:["de eerste stap","een held loopt"],start:[0,0],expected:["de eerste stap","een held loopt snel"],requiredMode:'normal',goal:"Voeg <b> snel</b> toe na <b>loopt</b> op regel 2."}
   ],
-  '06':[
+  '07':[
     {lines:["een stille nacht","  maan schijnt"],start:[0,0],expected:["een stille nacht","  de maan schijnt"],requiredMode:'normal',goal:"Voeg <b>de </b> toe vóór <b>maan</b> op regel 2. Behoud de twee beginspaties."},
     {lines:["een lange reis","de held loopt"],start:[0,0],expected:["een lange reis","de held loopt!"],requiredMode:'normal',goal:"Voeg <b>!</b> toe aan het einde van regel 2."},
     {lines:["het grote boek","    verhaal begint"],start:[0,0],expected:["het grote boek","    het verhaal begint"],requiredMode:'normal',goal:"Voeg <b>het </b> toe vóór <b>verhaal</b> op regel 2. Behoud de vier beginspaties."},
     {lines:["het eerste licht","de dag begint","een vogel zingt"],start:[0,0],expected:["het eerste licht","de dag begint","een vogel zingt."],requiredMode:'normal',goal:"Voeg <b>.</b> toe aan het einde van regel 3."}
   ],
-  '07':[
+  '08':[
     {lines:["de weg begint","de weg eindigt"],start:[0,0],expected:["de weg begint","de brug verschijnt","de weg eindigt"],requiredMode:'normal',goal:"Voeg een nieuwe regel <b>de brug verschijnt</b> tussen de twee regels toe."},
     {lines:["het avontuur","de held vertrekt"],start:[0,0],expected:["het avontuur","de kaart ligt klaar","de held vertrekt"],requiredMode:'normal',goal:"Voeg een nieuwe regel <b>de kaart ligt klaar</b> boven <b>de held vertrekt</b> toe."},
     {lines:["een lege zaal","de eerste gast","de derde gast"],start:[0,0],expected:["een lege zaal","de eerste gast","de tweede gast","de derde gast"],requiredMode:'normal',goal:"Voeg een nieuwe regel <b>de tweede gast</b> tussen de twee gasten toe."},
     {lines:["het kasteel","de poort sluit"],start:[0,0],expected:["het kasteel","de poort opent","de poort sluit"],requiredMode:'normal',goal:"Voeg een nieuwe regel <b>de poort opent</b> boven <b>de poort sluit</b> toe."}
   ],
-  '08':[
+  '09':[
     {lines:["de wind waait","de draakk vliegt"],start:[0,0],expected:["de wind waait","de draak vliegt"],requiredMode:'normal',goal:"Verwijder één extra <b>k</b> uit <b>draakk</b> op regel 2."},
     {lines:["het bos leeft","een sterr schijnt"],start:[0,0],expected:["het bos leeft","een ster schijnt"],requiredMode:'normal',goal:"Verwijder één extra <b>r</b> uit <b>sterr</b> op regel 2."},
     {lines:["de kaart ligt","het zwaardd blinkt"],start:[0,0],expected:["de kaart ligt","het zwaard blinkt"],requiredMode:'normal',goal:"Verwijder één extra <b>d</b> uit <b>zwaardd</b> op regel 2."},
     {lines:["de held rust","een bloemm groeit"],start:[0,0],expected:["de held rust","een bloem groeit"],requiredMode:'normal',goal:"Verwijder één extra <b>m</b> uit <b>bloemm</b> op regel 2."}
   ],
-  '09':[
+  '10':[
     {lines:["de kleine draak slaapt"],start:[0,0],expected:["de draak slaapt"],requiredMode:'normal',goal:"Verwijder <b>kleine </b> uit regel 1."},
     {lines:["een vuurBUG!"],start:[0,0],expected:["een vuur!"],requiredMode:'normal',goal:"Verwijder <b>BUG</b> uit regel 1, maar behoud <b>!</b>."},
     {lines:["de held draagt een zware tas"],start:[0,0],expected:["de held draagt een tas"],requiredMode:'normal',goal:"Verwijder <b>zware </b> uit regel 1."},
@@ -414,6 +412,7 @@ const LESSONS=[
  [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['$'],text:'Spring naar het laatste teken van de huidige regel.'}],
  [{keys:['gg'],text:'Spring naar de eerste regel van het bestand.'},{keys:['G'],text:'Spring naar de laatste regel van het bestand.'},{keys:['numberG'],text:'Typ eerst een regelnummer en dan hoofdletter G (Shift+G): 3G gaat naar regel 3, 5G naar regel 5.'}],
  [{keys:["i"],text:"Voeg tekst in vóór de cursor."},{keys:["a"],text:"Voeg tekst in ná de cursor."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:['u'],text:'Maak de laatste wijziging ongedaan.'},{keys:['Ctrl+r'],text:'Voer een ongedaan gemaakte wijziging opnieuw uit.'}],
  [{keys:["I"],text:"Begin te typen bij de eerste niet-lege positie van de regel."},{keys:["A"],text:"Begin te typen aan het einde van de regel."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:["o"],text:"Open een lege regel onder de huidige regel en start INSERT."},{keys:["O"],text:"Open een lege regel boven de huidige regel en start INSERT."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:["x"],text:"Verwijder het teken onder de cursor."},{keys:["X"],text:"Verwijder het teken links van de cursor."}],
@@ -422,7 +421,6 @@ const LESSONS=[
  [{keys:["r{teken}"],text:"Vervang het teken onder de cursor door het volgende teken."},{keys:["s"],text:"Verwijder één teken en start INSERT mode."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:["cw"],text:"Wijzig het woord vanaf de cursor."},{keys:["cc"],text:"Herschrijf de hele huidige regel."},{keys:["C"],text:"Herschrijf vanaf de cursor tot aan het regeleinde."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:['yy'],text:'Kopieer de hele huidige regel.'},{keys:['p'],text:'Plak de gekopieerde regel onder de cursor.'}],
- [{keys:['u'],text:'Maak de laatste wijziging ongedaan; je kunt dit vaker achter elkaar doen.'}],
  [{keys:['/'],text:'Open een zoekopdracht en typ daarna het gezochte woord.'},{keys:['Enter'],text:'Start de zoekopdracht en spring naar de match.'},{keys:['n'],text:'Spring naar de volgende match.'}],
  [{keys:['f{teken}'],text:'Zoek het volgende voorkomen van het getypte teken op de huidige regel.'}],
  [{keys:['dd'],text:'Verwijder de volledige huidige regel.'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
@@ -448,9 +446,10 @@ function updateWordUI(){
 }
 function prepareRound(r){
  roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
- mode='normal';pending='';count='';command='';reg=null;undo=[];searchTerm='';searchMatch=null;lastMessage='';
+ mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];searchTerm='';searchMatch=null;lastMessage='';
  if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
  if(ex.setup?.undoStates){undo=ex.setup.undoStates.map(state=>({lines:[...state],row:0,col:0}));}
+ if(ex.setup?.redoStates){redo=ex.setup.redoStates.map(state=>({lines:[...state],row:0,col:0}));}
  updateWordUI();render();
 }
 function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
@@ -464,22 +463,23 @@ function showLesson(){
 }
 function showQuestBriefing(){
  introStage='quest';const l=LEVELS[idx];
- const special=idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
+ const special=idx===5?`<p>Leer twee basisacties: een fout terugdraaien en een teruggedraaide wijziging opnieuw uitvoeren.</p>`:idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
  showModal(`<div class="intro-step">02 / 02 · JOUW MISSIE</div><div class="eyebrow" style="margin-top:12px">QUEST BRIEFING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${escapeHtml(l.desc)}</p><div class="quest-preview"><strong>OBJECTIVE //</strong><div>${l.goal}</div></div>${special}<p class="tiny">BESTAND: ${escapeHtml(l.file)} · START IN NORMAL MODE</p><div class="modalactions"><button class="btn" id="backToKeys">← TOETSEN</button><button class="btn primary" id="beginQuest">START QUEST →</button></div>`);
  $('backToKeys').onclick=showLesson;
  $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
 }
-const STORAGE='viquest.v2';const BOARD='viquest.board.v1';
+const STORAGE='viquest.v3';const BOARD='viquest.board.v2';
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-let data=read(STORAGE,null);if(!data){const prior=read('viquest.v1',null);data={name:prior?.name||'',unlocked:prior?.unlocked?Math.max(1,Math.min(17,({5:8,6:5,7:5,8:10,9:13,10:14,11:15,12:12,13:16,14:17}[prior.unlocked]||prior.unlocked))):1,bests:{},completed:{}};for(const id of ['01','02','03','04']){if(prior?.completed?.[id])data.completed[id]=true;if(prior?.bests?.[id])data.bests[id]=prior.bests[id]}}let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
+let data=read(STORAGE,null);if(!data){const prior=read('viquest.v2',null)||read('viquest.v1',null);data={name:prior?.name||'',unlocked:1,bests:{},completed:{}}}
+let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],redo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
 const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
 const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
 function jumpToLine(number){const line=clamp(Math.trunc(number),1,lines.length);setCursor(line-1,0)}
 function nextWord(){let rr=row,cc=col+1;while(rr<lines.length){let s=lines[rr];if(cc>=s.length){rr++;cc=0;continue}while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}if(cc>0&&charClass(s[cc])===charClass(s[cc-1])&&charClass(s[cc])!=='space'){let t=charClass(s[cc]);while(cc<s.length&&charClass(s[cc])===t)cc++;while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}}setCursor(rr,cc);return}setCursor(lines.length-1,lines.at(-1).length);}
 function prevWord(){let rr=row,cc=col-1;while(rr>=0){let s=lines[rr];if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}while(cc>=0&&charClass(s[cc])==='space')cc--;if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}let t=charClass(s[cc]);while(cc>0&&charClass(s[cc-1])===t)cc--;setCursor(rr,cc);return}}
 function endWord(){let s=lines[row],c=col+1,r=row;while(r<lines.length){s=lines[r];while(c<s.length&&charClass(s[c])==='space')c++;if(c<s.length){let t=charClass(s[c]);while(c+1<s.length&&charClass(s[c+1])===t)c++;setCursor(r,c);return}r++;c=0}}
-function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift()}
-function performUndo(){const x=undo.pop();if(x){lines=x.lines;mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}
+function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift();redo=[]}
+function performUndo(){const x=undo.pop();if(x){redo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}function performRedo(){const x=redo.pop();if(x){undo.push({lines:[...lines],row,col});lines=[...x.lines];mode='normal';setCursor(x.row,x.col);notice('Wijziging opnieuw uitgevoerd.')}else notice('Niets om opnieuw uit te voeren.')}
 function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.length>1)lines.splice(row,1);else lines[0]='';setCursor(Math.min(row,lines.length-1),0)}
 function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
 function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
@@ -555,6 +555,10 @@ function inputKey(e){
  // Modifier-only keydown events must not consume the pending Vim count.
  if(['Shift','Control','Alt','Meta','CapsLock','NumLock','Fn','FnLock'].includes(k))return;
  if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
+ if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key.toLowerCase()==='r'){
+ e.preventDefault();if(!questReady||finished||mode!=='normal')return;
+ if(!started)startTimer();keys++;history.push('Ctrl+r');if(history.length>40)history.shift();performRedo();render();evaluate();return;
+ }
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(!questReady)return;
  if(idx===1&&mode==='normal'&&WORD_ROUNDS[wordRound].forbidden.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
@@ -596,14 +600,14 @@ function inputKey(e){
  }
  render();evaluate();
  // Help identify visually subtle mismatches such as trailing spaces.
- if(idx===5&&!finished&&mode==='normal'&&lines.join('\n')!==currentExercise().expected.join('\n')){
+ if(LEVELS[idx].id==='07'&&!finished&&mode==='normal'&&lines.join('\n')!==currentExercise().expected.join('\n')){
   notice('Nog niet exact: '+JSON.stringify(lines[0])+' · doel: '+JSON.stringify(currentExercise().expected[0]));render();
  }
 }
 function loadLevel(i){
  if(i+1>data.unlocked)return;
  clearInterval(clock);idx=i;const l=LEVELS[i];
- mode='normal';pending='';count='';command='';reg=null;undo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
+ mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
  currentQuestSeed='run-'+Date.now()+'-'+(++questRunCounter);
  generatedQuestRounds=dynamicQuestForLevel(l.id,currentQuestSeed);
  if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
@@ -622,7 +626,7 @@ function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">
 function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginner'){
  introStage='';
  const seed=String(seedValue),skill=skillValue,difficulty=difficultyValue;
- const generated=skill==='delete'?dynamicQuestForLevel('09',seed):dynamicQuestForLevel(skill==='insert'?'05':'12',seed);
+ const generated=skill==='delete'?dynamicQuestForLevel('10',seed):dynamicQuestForLevel(skill==='insert'?'05':'13',seed);
  const choices=(values,selected)=>values.map(value=>'<option value="'+escapeHtml(value)+'"'+(value===selected?' selected':'')+'>'+escapeHtml(value)+'</option>').join('');
  const previews=generated.map((ex,i)=>'<div class="quest-preview" style="margin:10px 0"><strong>RONDE '+(i+1)+'/4'+(roundLabel(ex)?' · '+roundLabel(ex):'')+'</strong><p>'+escapeHtml(ex.goal)+'</p><pre style="white-space:pre-wrap;line-height:1.65;color:var(--text)">'+escapeHtml(ex.lines.map((line,j)=>(j+1)+': '+line).join('\n'))+'</pre><details><summary>Verwacht resultaat (generatorcontrole)</summary><pre style="white-space:pre-wrap;color:var(--muted)">'+escapeHtml(ex.expected.join('\n'))+'</pre></details></div>').join('');
  showModal('<div class="eyebrow">GENERATOR LAB // EXPERIMENT V'+escapeHtml(APP_VERSION)+'</div><h3>Dynamische opdrachten</h3><p>Test reproduceerbare opdrachten. De preview is een testomgeving; Insert, Change en Word/Line Delete zijn nu dynamisch speelbaar.</p><label class="tiny" for="generatorSeed">SEED</label><input id="generatorSeed" maxlength="80" value="'+escapeHtml(seed)+'" style="width:100%;margin:6px 0 12px;padding:10px;border:1px solid var(--edge);background:var(--panel2);color:var(--text)"><div class="row" style="flex-wrap:wrap;gap:10px"><label>Skill <select id="generatorSkill">'+choices(['insert','delete','change'],skill)+'</select></label><label>Moeilijkheid <select id="generatorDifficulty">'+choices(['beginner','apprentice','warrior'],difficulty)+'</select></label></div><p class="tiny">Generator '+QUEST_GENERATOR_VERSION+' · cursor altijd 1:1 · dezelfde seed + instellingen = dezelfde opdrachten</p>'+previews+'<div class="modalactions"><button class="btn" id="generatorNew">NIEUWE SEED</button><button class="btn primary" id="generatorAgain">GENEREER OPNIEUW</button><button class="btn" id="generatorClose">SLUITEN</button></div>');
