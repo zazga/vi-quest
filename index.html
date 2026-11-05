@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.7.0'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.7.1'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -171,16 +171,16 @@ function generateEditingRound(kind,seed,round){
  // Each stage gives an exact change, but never the required keystrokes.
  const definitions={
  'insert-append':[
- [[a+' '+b,c+' '+d],[a+' '+b,c+' '+e+' '+d],'Voeg '+e+' toe vóór '+d+' op regel 2.','i'],
+ [[a+' '+b,c+' '+d],[a+' '+b,c+' '+e+' '+d],'Voeg '+e+' gevolgd door één spatie toe vóór '+d+' op regel 2.','i'],
  [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+' '+e],'Voeg een spatie en '+e+' toe na '+d+' op regel 2.','a'],
- [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+d,e+' '+g+' '+f],'Voeg '+g+' toe vóór '+f+' op regel 3.','i'],
- [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+g+' '+d,e+' '+f+' '+h],'Voeg '+g+' toe vóór '+d+' op regel 2 en voeg '+h+' toe na '+f+' op regel 3.','combine']
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+d,e+' '+g+' '+f],'Voeg '+g+' gevolgd door één spatie toe vóór '+f+' op regel 3.','i'],
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+g+' '+d,e+' '+f+' '+h],'Voeg '+g+' gevolgd door één spatie toe vóór '+d+' op regel 2, en één spatie gevolgd door '+h+' na '+f+' op regel 3.','combine']
  ],
  'line-insert':[
- [[a+' '+b,'  '+c+' '+d],[a+' '+b,'  '+e+' '+c+' '+d],'Voeg '+e+' met een spatie toe vóór '+c+' op regel 2. Behoud de twee beginspaties.','I'],
+ [[a+' '+b,'  '+c+' '+d],[a+' '+b,'  '+e+' '+c+' '+d],'Voeg '+e+' gevolgd door één spatie toe vóór '+c+' op regel 2. Behoud de twee beginspaties.','I'],
  [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+'!'],'Voeg ! toe aan het einde van regel 2.','A'],
- [[a+' '+b,c+' '+d,'    '+e+' '+f],[a+' '+b,c+' '+d,'    '+g+' '+e+' '+f],'Voeg '+g+' met een spatie toe vóór '+e+' op regel 3. Behoud de vier beginspaties.','I'],
- [[a+' '+b,'  '+c+' '+d,e+' '+f],[a+' '+b,'  '+g+' '+c+' '+d,e+' '+f+'!'],'Voeg '+g+' met een spatie toe vóór '+c+' op regel 2 en ! aan het einde van regel 3.','combine']
+ [[a+' '+b,c+' '+d,'    '+e+' '+f],[a+' '+b,c+' '+d,'    '+g+' '+e+' '+f],'Voeg '+g+' gevolgd door één spatie toe vóór '+e+' op regel 3. Behoud de vier beginspaties.','I'],
+ [[a+' '+b,'  '+c+' '+d,e+' '+f],[a+' '+b,'  '+g+' '+c+' '+d,e+' '+f+'!'],'Voeg '+g+' gevolgd door één spatie toe vóór '+c+' op regel 2 en ! aan het einde van regel 3.','combine']
  ],
  'open-lines':[
  [[a,b],[a,c,b],'Maak een nieuwe regel met '+c+' direct onder '+a+'.','o'],
