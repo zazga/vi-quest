@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VI QUEST — The Keyboard Trials</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1012;--panel:#121a1d;--panel2:#172225;--edge:#2a3d40;--text:#e0eee7;--muted:#8fa6a2;--lime:#b7fa6a;--cyan:#68d8d1;--amber:#ffcd79;--red:#ff8394;--shadow:0 22px 60px #0007}*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(ellipse at 75% -20%,#17362f 0,transparent 48%),var(--bg);color:var(--text);min-height:100vh}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-offset:3px}.shell{max-width:1480px;margin:auto;padding:24px 28px 36px}.topbar,.brand,.topright,.stats,.row,.levelhead,.progress-title,.levelitem,.helphead,.footer{display:flex;align-items:center}.topbar{justify-content:space-between;gap:16px;padding-bottom:23px;border-bottom:1px solid var(--edge)}.brand{gap:13px}.mark{width:43px;height:43px;display:grid;place-items:center;border:1px solid #78c858;background:#182922;box-shadow:inset 0 0 12px #7dff4530;color:var(--lime);font:800 22px ui-monospace,monospace}.brand h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:900}.brand p,.tiny{font-size:11px;letter-spacing:.15em;color:var(--muted);margin:3px 0 0;text-transform:uppercase}.topright{gap:10px}.pill{padding:8px 12px;border:1px solid var(--edge);border-radius:5px;font-size:12px;color:var(--muted);background:#10191a}.pill b{color:var(--lime)}.btn{border:1px solid #3b5554;color:var(--text);background:#1b2a2d;padding:10px 14px;border-radius:5px;font-weight:750;letter-spacing:.02em;font-size:12px;transition:.15s}.btn:hover{border-color:var(--lime);color:var(--lime)}.btn.primary{background:var(--lime);color:#102015;border-color:var(--lime)}.btn.primary:hover{background:#d3ff9a}.layout{display:grid;grid-template-columns:250px minmax(420px,1fr) 285px;gap:18px;margin-top:24px}.card{border:1px solid var(--edge);background:linear-gradient(145deg,#141e20,#101719);border-radius:9px;overflow:hidden;box-shadow:var(--shadow)}.sidebar{padding:20px 14px;min-height:710px}.section-title{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin:0 6px 14px}.world{font-size:11px;color:var(--cyan);font-weight:800;letter-spacing:.15em;margin:22px 9px 10px;text-transform:uppercase}.world:first-of-type{margin-top:12px}.levelitem{width:100%;gap:10px;text-align:left;padding:11px 9px;border:1px solid transparent;border-radius:5px;color:#b5c8c2;background:none;margin-bottom:3px}.levelitem:hover{background:#213032}.levelitem.active{background:#22372c;border-color:#466c49;color:#e8ffe0}.levelitem.locked{opacity:.38;cursor:not-allowed}.levelnum{font:700 11px ui-monospace,monospace;min-width:28px;color:#81aba5}.levelitem.active .levelnum{color:var(--lime)}.leveltext{flex:1;font-size:12px;font-weight:650}.levelicon{color:var(--lime);font-size:14px}.center{min-width:0}.mission{padding:26px 29px 24px}.eyebrow{font:700 11px ui-monospace,monospace;letter-spacing:.13em;color:var(--lime)}h2{font-size:clamp(23px,2.5vw,34px);letter-spacing:-.04em;margin:10px 0 10px;line-height:1.12}.missiondesc{color:#b8cac3;font-size:13px;line-height:1.65;max-width:730px;margin:0}.goal{background:#1b2a23;border-left:3px solid var(--lime);padding:13px 16px;margin-top:18px;color:#d5ebcc;font-size:13px;line-height:1.55}.goal b{color:var(--lime)}.editor-wrap{margin-top:18px;border:1px solid #34494a;border-radius:8px;overflow:hidden;background:#0b1214}.editor-head{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid #2b4142;background:#152123}.file{font:700 12px ui-monospace,monospace;color:var(--cyan)}.editor-mini{font:11px ui-monospace,monospace;color:var(--muted)}.editor{position:relative;min-height:256px;padding:21px 0;outline:none;cursor:text;overflow:auto;user-select:none;font:15px/29px ui-monospace,SFMono-Regular,Consolas,Monaco,monospace;white-space:pre;tab-size:2}.editor:focus{box-shadow:inset 0 0 0 1px #7bbf7b50}.line{display:flex;min-height:29px}.gutter{width:55px;flex-shrink:0;color:#526f71;text-align:right;padding-right:18px;user-select:none;border-right:1px solid #243537;margin-right:17px}.line.current .gutter{color:var(--lime)}.content{flex:1;min-width:max-content;padding-right:30px}.cursor{background:var(--lime);color:#102015;box-shadow:0 0 12px #b7fa6a45}.cursor.insert{background:transparent;color:inherit;border-left:2px solid var(--lime);margin-left:-2px}.search-hit{background:#815a2470;color:#ffe1a0}.editor-foot{display:flex;align-items:center;justify-content:space-between;background:#20342e;border-top:1px solid #42634e;gap:12px;padding:9px 14px;font:700 11px ui-monospace,monospace}.mode{color:#112217;background:var(--lime);padding:4px 8px;border-radius:2px}.mode.insertmode{background:var(--amber)}.mode.commandmode{background:var(--cyan)}#cmdline{min-width:0;flex:1;color:#d5eee6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#cursorpos{color:#a6c0ac}.bottom-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0 0}.smallnote{color:var(--muted);font-size:11px}.key{display:inline-block;border:1px solid #4c6867;border-bottom-width:3px;background:#182729;color:#d7e8df;border-radius:4px;padding:3px 7px;font:700 11px ui-monospace,monospace;vertical-align:middle;margin:1px}.rightstack{display:flex;flex-direction:column;gap:17px}.infocard{padding:19px}.stats{justify-content:space-between;gap:8px}.stat{flex:1}.stat b{display:block;font:800 26px ui-monospace,monospace;color:var(--lime);margin:4px 0}.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.divider{border-top:1px solid var(--edge);margin:15px 0}.progress-title{justify-content:space-between;font-size:11px;color:#becfc8}.progress-title b{color:var(--lime)}.track{height:7px;border-radius:4px;background:#2b3e3b;margin:11px 0 7px;overflow:hidden}.track span{display:block;height:100%;background:linear-gradient(90deg,#5cba91,var(--lime));transition:width .35s}.guide{font-size:12px;line-height:1.65;color:#bbcec5}.guide p{margin:0 0 9px}.guide table{width:100%;border-collapse:collapse}.guide td{padding:6px 0;border-bottom:1px solid #2a3b3b}.guide td:first-child{width:92px}.recent{display:flex;gap:5px;flex-wrap:wrap;min-height:29px}.leader{width:100%;border-collapse:collapse;font-size:11px}.leader td{padding:9px 2px;border-bottom:1px solid #253737}.leader td:last-child{text-align:right;font:700 12px ui-monospace,monospace;color:var(--lime)}.empty{color:var(--muted);font-size:12px;line-height:1.6}.footer{justify-content:space-between;margin-top:22px;color:#64807d;font:10px ui-monospace,monospace;letter-spacing:.08em;gap:10px}.overlay{position:fixed;inset:0;z-index:20;background:#020806d9;display:none;align-items:center;justify-content:center;padding:22px;backdrop-filter:blur(5px)}.overlay.visible{display:flex}.modal{width:min(540px,100%);background:#152123;border:1px solid #56744f;border-radius:10px;padding:30px;box-shadow:0 40px 100px #000b}.lesson-list{display:grid;gap:10px;margin:21px 0}.lesson-item{display:flex;gap:14px;align-items:flex-start;padding:12px 13px;border:1px solid #315047;border-radius:7px;background:#10201c}.lesson-keys{flex:0 0 52px;display:flex;gap:4px;flex-wrap:nowrap}.lesson-key{display:inline-grid;place-items:center;min-width:25px;padding:5px 7px;border:1px solid #538360;border-bottom-width:3px;border-radius:5px;background:#1e3428;color:var(--lime);font:800 14px ui-monospace,monospace}.lesson-text{font-size:13px;color:#c4d9cf;line-height:1.6;padding-top:3px}.intro-step{font:800 11px ui-monospace,monospace;color:var(--cyan);letter-spacing:.12em}.quest-preview{padding:16px;border-left:3px solid var(--lime);background:#1a2d23;margin:20px 0;font-size:13px;line-height:1.7}.quest-preview strong{color:var(--lime)}.modal-esc-hint{margin-top:19px;text-align:right;color:var(--muted);font:11px ui-monospace,monospace}.modal-esc-hint kbd{color:var(--lime);font:inherit}.modal h3{font-size:27px;letter-spacing:-.04em;margin:10px 0}.modal p{font-size:13px;line-height:1.7;color:#b6c8c0}.modal input{width:100%;margin:10px 0 20px;padding:14px;border:1px solid #52706a;border-radius:5px;background:#091315;color:var(--text);font-size:15px}.modalactions{display:flex;justify-content:flex-end;gap:9px;margin-top:24px}.successrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}.successrow div{background:#1a2c29;padding:14px 10px;text-align:center;border:1px solid #314d42}.successrow b{display:block;font:800 24px ui-monospace,monospace;color:var(--lime)}.successrow span{font-size:10px;color:#8ca49c}.helpgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px 19px;margin:18px 0}.helpgrid div{font-size:12px;color:#bcd0c8;padding:6px 0;border-bottom:1px solid #2b3e3c}.quest-progress{margin-top:14px;padding:12px 14px;border:1px solid #34534b;border-radius:6px;background:#13241f;font-size:12px;color:#cfe4d4;line-height:1.7}.quest-progress b{color:var(--lime)}.quest-progress .dots{letter-spacing:5px;color:var(--lime)}.notification{color:var(--red);font-size:12px;margin-top:12px;min-height:18px}body:has(.overlay.visible) .editor{pointer-events:none}@media(max-width:1140px){.layout{grid-template-columns:210px minmax(380px,1fr)}.rightstack{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr)}.sidebar{min-height:0}.shell{padding:18px}}@media(max-width:760px){.layout{display:flex;flex-direction:column}.sidebar{display:none}.rightstack{display:flex}.mission{padding:21px 17px}.editor{font-size:13px}.gutter{width:38px;margin-right:10px;padding-right:10px}.topbar{flex-wrap:wrap}.pill{display:none}.smallnote{max-width:220px}.footer{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="topbar"><div class="brand"><div class="mark">:w</div><div><h1>VI QUEST</h1><p>THE KEYBOARD TRIALS // V1.2.0</p></div></div><div class="topright"><div class="pill">SPELER <b id="playerLabel">GUEST</b></div><div class="pill">TOTAAL <b id="totalScore">0 XP</b></div><button class="btn" id="helpBtn">? COMMANDS</button><button class="btn" id="renameBtn">PROFIEL</button></div></header>
+<div class="layout"><aside class="card sidebar"><div class="section-title">QUEST MAP</div><div id="levelList"></div></aside>
+<main class="center"><section class="card mission"><div class="eyebrow" id="stageLabel"></div><h2 id="levelTitle"></h2><p class="missiondesc" id="description"></p><div class="goal" id="goal"></div><div id="questProgress" class="quest-progress" style="display:none"></div><div class="editor-wrap"><div class="editor-head"><span class="file" id="filename">trial.txt</span><span class="editor-mini">VIM SIMULATOR · <span id="focusState">CLICK TO FOCUS</span></span></div><div class="editor" id="editor" tabindex="0" role="textbox" aria-label="Vim oefeneditor, bestuur met toetsenbord" aria-multiline="true"></div><div class="editor-foot"><span class="mode" id="modeLabel">NORMAL</span><span id="cmdline">Druk op de editor om te beginnen</span><span id="cursorpos">1:1</span></div></div><div class="bottom-actions"><span class="smallnote">Tip: <span class="key">Esc</span> = normal mode · <span class="key">?</span> = hulp</span><div class="row" style="gap:7px"><button class="btn" id="hintBtn">HINT −75 XP</button><button class="btn" id="resetBtn">↻ RESET</button></div></div><div class="notification" id="notification"></div></section></main>
+<aside class="rightstack"><section class="card infocard"><div class="section-title" style="margin-left:0">LIVE RUN</div><div class="stats"><div class="stat"><b id="timer">00:00</b><span>Tijd</span></div><div class="stat"><b id="keystrokes">0</b><span>Toetsen</span></div><div class="stat"><b id="hints">0</b><span>Hints</span></div></div><div class="divider"></div><div class="progress-title"><span>QUEST PROGRESS</span><b id="progressLabel">0/0</b></div><div class="track"><span id="progressBar" style="width:0%"></span></div></section><section class="card infocard"><div class="section-title" style="margin-left:0">QUICK REFERENCE</div><div class="guide"><table><tr><td><span class="key">h j k l</span></td><td>Bewegen</td></tr><tr><td><span class="key">w b e</span></td><td>Spring woord</td></tr><tr><td><span class="key">0 $</span></td><td>Begin / einde regel</td></tr><tr><td><span class="key">i a</span></td><td>Insert mode</td></tr><tr><td><span class="key">Esc</span></td><td>Normal mode</td></tr><tr><td><span class="key">u</span></td><td>Undo</td></tr></table></div><div class="divider"></div><div class="section-title" style="margin-left:0">KEY HISTORY</div><div class="recent" id="recent"></div></section><section class="card infocard"><div class="section-title" style="margin-left:0">LOCAL LEADERBOARD</div><div id="leaderboard"></div><button class="btn" style="width:100%;margin-top:15px" id="boardBtn">VOLLEDIG SCOREBORD</button></section></aside></div><footer class="footer"><span>VI QUEST / OFFLINE FIRST / SAVED IN YOUR BROWSER</span><span>NO MOUSE. NO MERCY. JUST MOTION.</span></footer></div>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
+<script>
+'use strict';
+const LEVELS=[
+{id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Navigeer naar de <b>X</b> zonder muis of pijltjestoetsen.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
+{id:'02',world:'01 · MOVEMENT',name:'Word Runner',title:'Spring van woord naar woord',file:'words.txt',desc:'Vier trainingsrondes met meerdere checkpoints. Gebruik slimme woordbewegingen en leer het verschil tussen het begin en het einde van woorden.',goal:'Voltooi alle checkpoints in de juiste volgorde.',lines:['fox wolf raven dragon serpent'],start:[0,0],target:[0,15],optimal:34,hint:'Gebruik w voor een volgend woordbegin, b voor een vorig woordbegin en e voor een woordeinde. Bekijk je huidige checkpoint.'},
+{id:'03',world:'01 · MOVEMENT',name:'Edge of Line',title:'De rand van de wereld',file:'edges.txt',desc:'Ga zonder onnodige toetsaanslagen naar de uiterste rand van een regel.',goal:'Plaats de cursor op de <b>!</b> aan het einde van de regel.',lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],optimal:1,hint:'Met $ spring je meteen naar het laatste teken van de regel.'},
+{id:'04',world:'01 · MOVEMENT',name:'Warp Jump',title:'Teleporteren door tekst',file:'warp.txt',desc:'In Vim kun je met twee toetsen van het begin naar het einde van een bestand springen.',goal:'Bereik de <b>X</b> op de laatste regel.',lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],optimal:2,hint:'G springt naar de laatste regel. $ gaat naar het einde van die regel.'},
+{id:'05',world:'02 · EDITING',name:'Delete the Bug',title:'Vernietig de bug',file:'bugfix.txt',desc:'De cursor is een wapen. Verwijder het ongewenste teken in de code.',goal:'Verander <b>consoole.log</b> in <b>console.log</b>.',lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],optimal:2,hint:'Beweeg met l naar de extra o, en druk x om die te wissen.'},
+{id:'06',world:'02 · EDITING',name:'Insert Mode',title:'Schrijf je eerste rune',file:'rune.txt',desc:'In normal mode bestuur je tekst. Met i ga je schrijven; met Esc keer je terug.',goal:'Maak van <b>vim</b> het woord <b>vimmage</b> en eindig in NORMAL mode.',lines:['vim'],start:[0,3],expected:['vimmage'],requiredMode:'normal',optimal:7,hint:'Druk i, typ mage, en druk Esc. Let op: het doel is precies vimmage, zonder extra spaties.'},
+{id:'07',world:'02 · EDITING',name:'Append Spell',title:'De append-spreuk',file:'spell.txt',desc:'Met a voeg je tekst toe ná de huidige cursorpositie.',goal:'Verander <b>power</b> in <b>powerful</b> en keer terug naar normal mode.',lines:['power'],start:[0,4],expected:['powerful'],requiredMode:'normal',optimal:5,hint:'Druk a, typ ful en sluit af met Esc.'},
+{id:'08',world:'02 · EDITING',name:'Line Slayer',title:'Regelvernietiger',file:'cleanup.txt',desc:'Soms is een volledige regel waardeloos. Verwijder hem met één krachtige operator.',goal:'Verwijder alleen de regel <b>REMOVE_ME</b>.',lines:['keep this','REMOVE_ME','and this'],start:[1,2],expected:['keep this','and this'],optimal:2,hint:'dd verwijdert de volledige huidige regel.'},
+{id:'09',world:'03 · POWER MOVES',name:'Copy / Paste',title:'De kloonkamer',file:'clone.txt',desc:'Met yank en put dupliceer je regels zonder opnieuw te typen.',goal:'Maak een tweede regel met exact <b>echo "vim"</b>.',lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],optimal:3,hint:'yy kopieert de hele regel. p plakt die eronder.'},
+{id:'10',world:'03 · POWER MOVES',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Fouten herstellen is sneller dan perfect zijn. De undo-stack is jouw tijdmachine.',goal:'Herstel de volledige tekst <b>never give up</b> met undo.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
+{id:'11',world:'03 · POWER MOVES',name:'Search Hunter',title:'De jacht op de schaduw',file:'search.txt',desc:'Vind een doelwit in een groot bestand met de zoekopdracht / en Enter.',goal:'Zoek <b>shadow</b> en plaats de cursor op de eerste letter.',lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],optimal:8,hint:'Typ /shadow en druk Enter.'},
+{id:'12',world:'03 · POWER MOVES',name:'Change Word',title:'Herschrijf het lot',file:'change.txt',desc:'Combineer operators en motions. Met cw vervang je snel een woord.',goal:'Verander <b>weak</b> in <b>strong</b> en eindig in normal mode.',lines:['the weak warrior rises'],start:[0,4],expected:['the strong warrior rises'],requiredMode:'normal',optimal:9,hint:'cw verwijdert het woord en opent insert mode. Typ strong, daarna Esc.'},
+{id:'13',world:'04 · MASTERY',name:'Find the Target',title:'Precisiesprong',file:'precision.txt',desc:'Ga direct naar een karakter op de huidige regel met f gevolgd door het karakter.',goal:'Spring naar de <b>@</b> op deze regel.',lines:['path ....... @ treasure'],start:[0,0],target:[0,13],optimal:2,hint:'f@ springt naar de eerstvolgende @ op de huidige regel.'},
+{id:'14',world:'04 · MASTERY',name:'Final Boss',title:'The Keyboard Warrior',file:'boss.txt',desc:'Je laatste uitdaging: navigeer, verwijder de corrupte regel en herstel de ontbrekende tekst. Snelheid én precisie tellen.',goal:'Houd alleen <b>QUEST COMPLETE</b> en <b>YOU ARE A VIM WARRIOR</b> over, in die volgorde. Eindig in normal mode.',lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',optimal:9,hint:'dd verwijdert de corrupte regel. Ga daarna met G en $ naar het einde, gebruik a om IOR toe te voegen, en Esc.'}
+];
+// Level 02 is a four-round quest. Restrictions vary by round, not by skill.
+const WORD_ROUNDS=[
+ {words:['fox','wolf','raven','dragon','serpent'],goals:[[1,'first'],[2,'last'],[3,'last'],[4,'first']],rule:'Alle bewegingen toegestaan.',forbidden:[]},
+ {words:['ember','rune','mage','shield','sword'],goals:[[2,'first'],[3,'last'],[1,'first'],[4,'last']],rule:'Alle bewegingen toegestaan: kies je eigen route.',forbidden:[]},
+ {words:['pixel','cursor','buffer','window','terminal'],goals:[[1,'last'],[3,'first'],[4,'last'],[2,'first']],rule:'Challenge: h, j, k en l zijn in deze ronde verboden.',forbidden:['h','j','k','l']},
+ {words:['storm','north','forest','castle','victory'],goals:[[4,'first'],[2,'last'],[1,'first'],[3,'last']],rule:'Vrije ronde: alle Vim-motions zijn weer toegestaan.',forbidden:[]}
+];
+// Four increasingly varied exercises per level. Level 02 retains its checkpoint course.
+const EXTRA_ROUNDS={
+  '01':[
+    {lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],goal:'Bereik de <b>X</b> op regel 3.'},
+    {lines:['. . . . X . .','. . . . . . .','. . . . . . .'],start:[2,12],target:[0,8],goal:'Ga vanaf rechtsonder naar de <b>X</b> linksboven.'},
+    {lines:['. . . . . . .','. . X . . . .','. . . . . . .','. . . . . . .'],start:[3,0],target:[1,4],goal:'Bereik de <b>X</b> op regel 2.'},
+    {lines:['. . . . . . .','. . . . . . .','. . . . . . .','. . . . . . X'],start:[0,12],target:[3,12],goal:'Navigeer naar de <b>X</b> rechtsonder.'}
+  ],
+  '03':[
+    {lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],goal:'Bereik de <b>!</b> aan het einde met <b>$</b>.'},
+    {lines:['START then find your way back'],start:[0,19],target:[0,0],goal:'Spring naar de <b>S</b> aan het begin met <b>0</b>.'},
+    {lines:['an entire line ends here!'],start:[0,0],target:[0,24],goal:'Bereik de laatste <b>!</b>.'},
+    {lines:['first steps make a warrior'],start:[0,25],target:[0,0],goal:'Keer terug naar de eerste letter <b>f</b>.'}
+  ],
+  '04':[
+    {lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],goal:'Bereik de <b>X</b> op de laatste regel.'},
+    {lines:['X marks the top','below the clouds','under the bridge','at the bottom'],start:[3,6],target:[0,0],goal:'Spring terug naar <b>X</b> op de eerste regel.'},
+    {lines:['alpha','beta','gamma','delta','omega!'],start:[1,2],target:[4,5],goal:'Spring naar de <b>!</b> helemaal onderaan.'},
+    {lines:['TOP','one','two','three','four','five'],start:[5,1],target:[0,0],goal:'Vind <b>TOP</b> helemaal bovenaan.'}
+  ],
+  '05':[
+    {lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],goal:'Verwijder de extra <b>o</b> uit <b>consoole</b>.'},
+    {lines:['let scoree = 100;'],start:[0,9],expected:['let score = 100;'],goal:'Verwijder de extra <b>e</b> uit <b>scoree</b>.'},
+    {lines:['const vimm = true;'],start:[0,9],expected:['const vim = true;'],goal:'Verwijder de extra <b>m</b> uit <b>vimm</b>.'},
+    {lines:['returnn power;'],start:[0,5],expected:['return power;'],goal:'Verwijder de extra <b>n</b> uit <b>returnn</b>.'}
+  ],
+  '06':[
+    {lines:['vim'],start:[0,3],expected:['vimmage'],requiredMode:'normal',goal:'Maak <b>vimmage</b> en eindig in NORMAL mode.'},
+    {lines:['quest'],start:[0,5],expected:['questline'],requiredMode:'normal',goal:'Maak <b>questline</b> en eindig in NORMAL mode.'},
+    {lines:['hero'],start:[0,4],expected:['heroic'],requiredMode:'normal',goal:'Maak <b>heroic</b> en eindig in NORMAL mode.'},
+    {lines:['key'],start:[0,3],expected:['keyboard'],requiredMode:'normal',goal:'Maak <b>keyboard</b> en eindig in NORMAL mode.'}
+  ],
+  '07':[
+    {lines:['power'],start:[0,4],expected:['powerful'],requiredMode:'normal',goal:'Voeg <b>ful</b> achter <b>power</b> toe.'},
+    {lines:['skill'],start:[0,4],expected:['skilled'],requiredMode:'normal',goal:'Maak met append <b>skilled</b>.'},
+    {lines:['quest'],start:[0,4],expected:['questing'],requiredMode:'normal',goal:'Maak met append <b>questing</b>.'},
+    {lines:['warrior'],start:[0,6],expected:['warriors'],requiredMode:'normal',goal:'Maak met append <b>warriors</b>.'}
+  ],
+  '08':[
+    {lines:['keep this','REMOVE_ME','and this'],start:[1,2],expected:['keep this','and this'],goal:'Verwijder alleen de regel <b>REMOVE_ME</b>.'},
+    {lines:['REMOVE_ME','const hp = 100;','return hp;'],start:[0,0],expected:['const hp = 100;','return hp;'],goal:'Verwijder de bovenste regel <b>REMOVE_ME</b>.'},
+    {lines:['const xp = 10;','DROP_THIS','console.log(xp);'],start:[1,4],expected:['const xp = 10;','console.log(xp);'],goal:'Haal <b>DROP_THIS</b> uit het midden.'},
+    {lines:['safe line','another safe line','DELETE_THIS'],start:[2,3],expected:['safe line','another safe line'],goal:'Verwijder de laatste regel <b>DELETE_THIS</b>.'}
+  ],
+  '09':[
+    {lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],goal:'Maak een tweede regel met <b>echo "vim"</b>.'},
+    {lines:['const mana = 20;'],start:[0,0],expected:['const mana = 20;','const mana = 20;'],goal:'Dupliceer de regel <b>const mana = 20;</b>.'},
+    {lines:['// keyboard warrior'],start:[0,5],expected:['// keyboard warrior','// keyboard warrior'],goal:'Kopieer de commentaarregel naar de regel eronder.'},
+    {lines:['save();'],start:[0,2],expected:['save();','save();'],goal:'Maak met yank en paste nog een regel <b>save();</b>.'}
+  ],
+  '10':[
+    {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Herstel <b>never give up</b> met undo.'},
+    {lines:['practice makes perfect'],start:[0,0],setup:'deleteLast',expected:['practice makes perfect'],goal:'Herstel de ontbrekende laatste letter.'},
+    {lines:['vim is a superpower'],start:[0,0],setup:'deleteLast',expected:['vim is a superpower'],goal:'Draai de wijziging terug met <b>u</b>.'},
+    {lines:['mission complete'],start:[0,0],setup:'deleteLast',expected:['mission complete'],goal:'Herstel <b>mission complete</b>.'}
+  ],
+  '11':[
+    {lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],goal:'Zoek <b>shadow</b> en bereik de eerste letter.'},
+    {lines:['the portal is shut','a mighty dragon sleeps','the stars are bright'],start:[0,0],target:[1,9],goal:'Zoek <b>dragon</b>.'},
+    {lines:['read the map','cross the river','find the crystal here','return home'],start:[0,0],target:[2,9],goal:'Zoek <b>crystal</b>.'},
+    {lines:['the key is hidden','watch the entrance','unlock the vault','collect the prize'],start:[0,0],target:[2,11],goal:'Zoek <b>vault</b>.'}
+  ],
+  '12':[
+    {lines:['the weak warrior rises'],start:[0,4],expected:['the strong warrior rises'],requiredMode:'normal',goal:'Vervang <b>weak</b> door <b>strong</b>.'},
+    {lines:['the slow runner wins'],start:[0,4],expected:['the swift runner wins'],requiredMode:'normal',goal:'Vervang <b>slow</b> door <b>swift</b>.'},
+    {lines:['a small victory awaits'],start:[0,2],expected:['a great victory awaits'],requiredMode:'normal',goal:'Vervang <b>small</b> door <b>great</b>.'},
+    {lines:['the old spell works'],start:[0,4],expected:['the new spell works'],requiredMode:'normal',goal:'Vervang <b>old</b> door <b>new</b>.'}
+  ],
+  '13':[
+    {lines:['path ....... @ treasure'],start:[0,0],target:[0,13],goal:'Spring naar <b>@</b> met <b>f@</b>.'},
+    {lines:['search ....... # reward'],start:[0,0],target:[0,15],goal:'Spring naar <b>#</b> met <b>f#</b>.'},
+    {lines:['the route .... ! finish'],start:[0,0],target:[0,15],goal:'Spring naar <b>!</b> met <b>f!</b>.'},
+    {lines:['find ....... % secret'],start:[0,0],target:[0,13],goal:'Spring naar <b>%</b> met <b>f%</b>.'}
+  ],
+  '14':[
+    {lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',goal:'Verwijder de corrupte regel en herstel <b>WARRIOR</b>.'},
+    {lines:['MISSION START','BROKEN LINE','VICTORY IS YOUR'],start:[1,0],expected:['MISSION START','VICTORY IS YOURS'],requiredMode:'normal',goal:'Verwijder <b>BROKEN LINE</b> en herstel <b>YOURS</b>.'},
+    {lines:['NEOVIM READY','DELETE ME','SKILL UNLOCK'],start:[1,0],expected:['NEOVIM READY','SKILL UNLOCKED'],requiredMode:'normal',goal:'Verwijder <b>DELETE ME</b> en maak <b>UNLOCKED</b>.'},
+    {lines:['FINAL TRIAL','CORRUPT','KEYBOARD WARR'],start:[1,0],expected:['FINAL TRIAL','KEYBOARD WARRIOR'],requiredMode:'normal',goal:'Verwijder <b>CORRUPT</b> en voltooi <b>WARRIOR</b>.'}
+  ]
+};
+// Every level has a dedicated key-learning screen, followed by a quest briefing.
+const LESSONS=[
+ [{keys:['h'],text:'Beweeg één teken naar links.'},{keys:['j'],text:'Beweeg één regel omlaag.'},{keys:['k'],text:'Beweeg één regel omhoog.'},{keys:['l'],text:'Beweeg één teken naar rechts.'}],
+ [{keys:['w'],text:'Spring naar het begin van het volgende woord.'},{keys:['b'],text:'Spring terug naar het begin van het vorige woord.'},{keys:['e'],text:'Spring naar het einde van een woord.'}],
+ [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['$'],text:'Spring naar het laatste teken van de huidige regel.'}],
+ [{keys:['g'],text:'Druk twee keer achter elkaar op g om naar de eerste regel te springen (gg).'},{keys:['G'],text:'Ga meteen naar de laatste regel.'},{keys:['$'],text:'Bereik het laatste teken van die regel.'}],
+ [{keys:['x'],text:'Verwijder het teken onder je cursor in NORMAL mode.'},{keys:['h'],text:'Beweeg één teken naar links om de cursor te positioneren.'},{keys:['l'],text:'Beweeg één teken naar rechts om de cursor te positioneren.'}],
+ [{keys:['i'],text:'Ga naar INSERT mode en typ tekst vóór de cursor.'},{keys:['Esc'],text:'Keer terug naar NORMAL mode wanneer je klaar bent.'}],
+ [{keys:['a'],text:'Ga naar INSERT mode, direct ná het huidige teken.'},{keys:['Esc'],text:'Sluit INSERT mode af.'}],
+ [{keys:['d'],text:'Druk twee keer op d om de volledige huidige regel te verwijderen (dd).'},{keys:['j'],text:'Beweeg één regel omlaag, als je de juiste regel nog moet opzoeken.'},{keys:['k'],text:'Beweeg één regel omhoog, als je de juiste regel nog moet opzoeken.'}],
+ [{keys:['y'],text:'Druk twee keer op y om de volledige regel te kopiëren (yy).'},{keys:['p'],text:'Plak de gekopieerde regel onder de cursor.'}],
+ [{keys:['u'],text:'Maak de laatste wijziging ongedaan; je kunt dit vaker achter elkaar doen.'}],
+ [{keys:['/'],text:'Open een zoekopdracht en typ daarna het gezochte woord.'},{keys:['Enter'],text:'Start de zoekopdracht en spring naar de match.'},{keys:['n'],text:'Spring naar de volgende match.'}],
+ [{keys:['c'],text:'Start een wijziging; druk daarna op w om het woord te veranderen (cw).'},{keys:['w'],text:'Na c: selecteer het woord vanaf de cursor en ga naar INSERT mode.'},{keys:['Esc'],text:'Ga terug naar NORMAL mode nadat je de nieuwe tekst hebt getypt.'},{keys:[':'],text:'Alternatief: typ :%s/oud/nieuw/ en druk Enter om tekst in het hele bestand te vervangen.'}],
+ [{keys:['f'],text:'Typ f gevolgd door één doelteken, zoals f@, om ernaartoe te springen.'}],
+ [{keys:['d'],text:'Druk twee keer op d om de ongewenste regel te verwijderen (dd).'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
+];
+let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
+function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
+function currentExercise(){return idx===1?null:currentRounds()[roundIndex]}
+function wordPosition(round,step){const r=WORD_ROUNDS[round],g=r.goals[step],index=g[0];let start=0;for(let i=0;i<index;i++)start+=r.words[i].length+1;return [0,start+(g[1]==='last'?r.words[index].length-1:0)]}
+function wordTaskText(){const r=WORD_ROUNDS[wordRound],g=r.goals[wordStep];return `${g[1]==='first'?'eerste':'laatste'} letter van <b>${r.words[g[0]]}</b>`}
+function updateWordUI(){
+ const p=$('questProgress');p.style.display='block';
+ if(idx===1){
+  const r=WORD_ROUNDS[wordRound];
+  p.innerHTML=`<b>RONDE ${wordRound+1}/${WORD_ROUNDS.length}</b><div class="dots">${r.goals.map((_,i)=>i<wordStep?'●':i===wordStep?'◉':'○').join(' ')}</div><b>VOLGENDE TARGET:</b> ${wordTaskText()}<div>${r.rule}</div>`;
+  $('goal').innerHTML='<b>OBJECTIVE //</b> Raak achtereenvolgens de aangeduide letters. '+wordTaskText()+'.';
+ } else {
+  const ex=currentExercise();
+  p.innerHTML=`<b>RONDE ${roundIndex+1}/${currentRounds().length}</b><div style="margin-top:5px">${ex.goal}</div>`;
+  $('goal').innerHTML='<b>OBJECTIVE //</b> '+ex.goal;
+ }
+}
+function prepareRound(r){
+ roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
+ mode='normal';pending='';count='';command='';reg=null;undo=[];searchTerm='';searchMatch=null;lastMessage='';
+ if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
+ updateWordUI();render();
+}
+function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
+let introStage='';
+function showLesson(){
+ questReady=false;introStage='keys';
+ const l=LEVELS[idx];
+ const rows=LESSONS[idx].map(item=>`<div class="lesson-item"><div class="lesson-keys">${item.keys.map(key=>`<span class="lesson-key">${escapeHtml(key)}</span>`).join('')}</div><div class="lesson-text">${escapeHtml(item.text)}</div></div>`).join('');
+ showModal(`<div class="intro-step">01 / 02 · LEER DE TOETSEN</div><div class="eyebrow" style="margin-top:12px">TRAINING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>Leer eerst de bewegingen en commando's die in deze quest handig zijn. Je hoeft niet alle mogelijkheden uit je hoofd te kennen: probeer ze straks uit.</p><div class="lesson-list">${rows}</div><div class="modalactions"><button class="btn primary" id="toQuest">GA NAAR QUEST →</button></div>`);
+ $('toQuest').onclick=showQuestBriefing;
+}
+function showQuestBriefing(){
+ introStage='quest';const l=LEVELS[idx];
+ const special=idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
+ showModal(`<div class="intro-step">02 / 02 · JOUW MISSIE</div><div class="eyebrow" style="margin-top:12px">QUEST BRIEFING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${escapeHtml(l.desc)}</p><div class="quest-preview"><strong>OBJECTIVE //</strong><div>${l.goal}</div></div>${special}<p class="tiny">BESTAND: ${escapeHtml(l.file)} · START IN NORMAL MODE</p><div class="modalactions"><button class="btn" id="backToKeys">← TOETSEN</button><button class="btn primary" id="beginQuest">START QUEST →</button></div>`);
+ $('backToKeys').onclick=showLesson;
+ $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
+}
+const STORAGE='viquest.v1';const BOARD='viquest.board.v1';
+function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
+let data=read(STORAGE,{name:'',unlocked:1,bests:{},completed:{}});let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
+const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
+const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
+function nextWord(){let rr=row,cc=col+1;while(rr<lines.length){let s=lines[rr];if(cc>=s.length){rr++;cc=0;continue}while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}if(cc>0&&charClass(s[cc])===charClass(s[cc-1])&&charClass(s[cc])!=='space'){let t=charClass(s[cc]);while(cc<s.length&&charClass(s[cc])===t)cc++;while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}}setCursor(rr,cc);return}setCursor(lines.length-1,lines.at(-1).length);}
+function prevWord(){let rr=row,cc=col-1;while(rr>=0){let s=lines[rr];if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}while(cc>=0&&charClass(s[cc])==='space')cc--;if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}let t=charClass(s[cc]);while(cc>0&&charClass(s[cc-1])===t)cc--;setCursor(rr,cc);return}}
+function endWord(){let s=lines[row],c=col+1,r=row;while(r<lines.length){s=lines[r];while(c<s.length&&charClass(s[c])==='space')c++;if(c<s.length){let t=charClass(s[c]);while(c+1<s.length&&charClass(s[c+1])===t)c++;setCursor(r,c);return}r++;c=0}}
+function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift()}
+function performUndo(){const x=undo.pop();if(x){lines=x.lines;mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}
+function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.length>1)lines.splice(row,1);else lines[0]='';setCursor(Math.min(row,lines.length-1),0)}
+function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
+function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
+function deleteChar(){if(col>=lines[row].length)return;snapshot();reg={type:'char',value:lines[row][col]};lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1);setCursor(row,col)}
+function substituteCommand(cmd){
+ // Support :s/pattern/replacement/[g] on the current line and :%s/.../.../[g] on the entire buffer.
+ const match=cmd.match(/^(%?)s\/([^/]*)\/([^/]*)(?:\/(g?)?)?$/);
+ if(!match)return false;
+ const [,all,pattern,replacement,globalFlag]=match;
+ if(!pattern){notice('Substitutie vereist een zoekpatroon.');return true}
+ let regex;
+ try{regex=new RegExp(pattern,globalFlag==='g'?'g':'')}catch{notice('Ongeldig zoekpatroon: '+pattern);return true}
+ let changes=0;const start=all?0:row,end=all?lines.length:row+1;
+ const updated=[...lines];
+ for(let i=start;i<end;i++){
+  let replaced=0;
+  updated[i]=lines[i].replace(regex,()=>{replaced++;return replacement});
+  changes+=replaced;
+ }
+ if(changes){snapshot();lines=updated;setCursor(row,col);searchMatch=null;notice(changes+' vervanging'+(changes===1?'':'en')+' uitgevoerd.');}
+ else notice('Patroon niet gevonden: '+pattern);
+ return true;
+}
+function findSearch(term,fromAfter=true){if(!term)return false;let startR=row,startC=col+(fromAfter?1:0);for(let d=0;d<lines.length;d++){const r=(startR+d)%lines.length;const c=lines[r].indexOf(term,d===0?startC:0);if(c>=0){setCursor(r,c);searchMatch=[r,c,term.length];return true}}if(fromAfter){for(let r=0;r<=row;r++){let c=lines[r].indexOf(term);if(c>=0&&(r!==row||c<=col)){setCursor(r,c);searchMatch=[r,c,term.length];return true}}}return false}
+function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=>{if(!finished){elapsed=Math.floor((Date.now()-started)/1000);$('timer').textContent=fmtTime(elapsed)}},250)}function fmtTime(t){return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
+function notice(s){lastMessage=s;$('notification').textContent=s}
+function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
+function levelComplete(){
+ if(idx===1)return wordRound===WORD_ROUNDS.length-1&&wordStep===WORD_ROUNDS[wordRound].goals.length;
+ const ex=currentExercise();
+ if(ex.expected&&JSON.stringify(lines)!==JSON.stringify(ex.expected))return false;
+ if(ex.target&&(row!==ex.target[0]||col!==ex.target[1]))return false;
+ if(ex.requiredMode&&mode!==ex.requiredMode)return false;
+ return !!(ex.expected||ex.target);
+}
+function evaluate(){
+ if(!questReady||finished)return;
+ if(idx===1){
+  if(wordStep<WORD_ROUNDS[wordRound].goals.length){const pos=wordPosition(wordRound,wordStep);
+   if(row===pos[0]&&col===pos[1]){wordStep++;
+    if(wordStep>=WORD_ROUNDS[wordRound].goals.length&&wordRound<WORD_ROUNDS.length-1){setWordRound(wordRound+1);notice('Ronde voltooid! Nieuwe tekst, nieuwe route.');render();return}
+    if(wordStep<WORD_ROUNDS[wordRound].goals.length){updateWordUI();notice('Checkpoint gehaald! Op naar de volgende letter.');render()}
+   }
+  }
+ }else if(levelComplete()&&roundIndex<currentRounds().length-1){
+  prepareRound(roundIndex+1);notice('Ronde voltooid! Nieuwe opdracht.');render();return;
+ }
+ if(levelComplete()){
+ finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
+function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
+function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
+if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){setCursor(0,0);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
+if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
+switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':setCursor(lines.length-1,0);break;case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}count=''}
+function inputKey(e){
+ if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
+ const k=e.key;
+ if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(!questReady)return;
+ if(idx===1&&mode==='normal'&&WORD_ROUNDS[wordRound].forbidden.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
+ if(k.startsWith('Arrow')){notice('Geen pijltjes! Gebruik h j k l.');return}
+ if(k==='Tab')return;
+ if(k==='Escape'){
+  // Prevent this same Escape event from dismissing the victory modal opened by evaluate().
+  e.stopPropagation();
+  if(mode==='insert'&&col>0)col--;
+  mode='normal';pending='';count='';command='';render();evaluate();if(idx===5&&!finished){notice('Huidige tekst: '+JSON.stringify(lines[0])+' · vereist: \"vimmage\" in NORMAL mode');render()}return;
+ }
+ if(!started)startTimer();
+ if(finished)return;
+ keys++;
+ history.push(k==='Enter'?'↵':k==='Backspace'?'⌫':k==='Delete'?'⌦':k===' '?'␣':k);
+ if(history.length>40)history.shift();
+ lastMessage='';
+ if(mode==='normal'){
+  if(k==='Delete')deleteChar();
+  else if(k!=='Backspace'&&k!=='Enter')handleNormal(k);
+ }else if(mode==='insert'){
+  if(k==='Backspace'){
+   if(col>0){snapshot();lines[row]=lines[row].slice(0,col-1)+lines[row].slice(col);col--}
+   else if(row>0){snapshot();let len=lines[row-1].length;lines[row-1]+=lines[row];lines.splice(row,1);row--;col=len}
+  }else if(k==='Delete')deleteForward();
+  else if(k==='Enter'){
+   snapshot();let tail=lines[row].slice(col);lines[row]=lines[row].slice(0,col);lines.splice(row+1,0,tail);row++;col=0;
+  }else if(k.length===1)insertText(k);
+ }else if(mode==='search'||mode==='command'){
+  if(k==='Enter'){
+   if(mode==='search'){searchTerm=command;if(!findSearch(searchTerm,false))notice('Niet gevonden: '+searchTerm)}
+   else if(command==='w'||command==='wq')notice('Bestand opgeslagen (simulatie).');
+   else if(command==='q')notice('Deze quest sluit je niet zomaar af ;)');
+   else if(!substituteCommand(command))notice('Onbekende opdracht: :'+command);
+   mode='normal';command='';
+  }else if(k==='Backspace')command=command.slice(0,-1);
+  else if(k==='Delete'){} // command cursor is always at the end
+  else if(k.length===1)command+=k;
+ }
+ render();evaluate();
+ // Help identify visually subtle mismatches such as trailing spaces.
+ if(idx===5&&!finished&&mode==='normal'&&lines.join('\n')!==currentExercise().expected.join('\n')){
+  notice('Nog niet exact: '+JSON.stringify(lines[0])+' · doel: '+JSON.stringify(currentExercise().expected[0]));render();
+ }
+}
+function loadLevel(i){
+ if(i+1>data.unlocked)return;
+ clearInterval(clock);idx=i;const l=LEVELS[i];
+ mode='normal';pending='';count='';command='';reg=null;undo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
+ if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
+ else prepareRound(0);
+ $('stageLabel').textContent='TRIAL '+l.id+' / '+LEVELS.length+' · '+l.world;
+ $('levelTitle').textContent=l.title;$('description').textContent=l.desc;$('filename').textContent=l.file;
+ $('timer').textContent='00:00';$('notification').textContent='';
+ updateSidebar();updateMeta();updateWordUI();render();showLesson();
+}function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
+function updateMeta(){$('playerLabel').textContent=(data.name||'GUEST').toUpperCase();$('totalScore').textContent=Object.values(data.bests).reduce((a,b)=>a+b,0).toLocaleString('nl-NL')+' XP';let done=Object.keys(data.completed).length;$('progressLabel').textContent=done+'/'+LEVELS.length;$('progressBar').style.width=(100*done/LEVELS.length)+'%';renderBoard()}
+function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="leader">'+board.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>LV ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
+function showModal(content){$('modal').innerHTML=content+'<div class="modal-esc-hint">Druk op <kbd>Esc</kbd> om te sluiten</div>';$('overlay').classList.add('visible')}function closeModal(){if(introStage){introStage='';questReady=true} $('overlay').classList.remove('visible');$('editor').focus()}
+function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">LOCAL PLAYER PROFILE</div><h3>${first?'Welkom bij Vi Quest':'Spelersprofiel'}</h3><p>${first?'Kies je warrior-naam om je voortgang en scores lokaal in deze browser te bewaren.':'Je voortgang wordt lokaal op dit apparaat bewaard. Een nieuw schermnaam verandert je toekomstige scores, niet je oude scores.'}</p><label class="tiny" for="nameInput">WARRIOR NAME</label><input id="nameInput" maxlength="20" placeholder="Bijv. NeoVimNinja" value="${escapeHtml(data.name)}" /><div class="modalactions">${first?'':'<button class="btn" id="profileCancel">ANNULEREN</button>'}<button class="btn primary" id="profileSave">${first?'START QUEST →':'OPSLAAN'}</button></div>`);$('nameInput').focus();$('nameInput').select();$('profileSave').onclick=()=>{data.name=$('nameInput').value.trim().slice(0,20)||'Guest';save();updateMeta();closeModal();if(first)showLesson()};$('nameInput').onkeydown=e=>{if(e.key==='Enter')$('profileSave').click()};if(!first)$('profileCancel').onclick=closeModal}
+function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a A I</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x</span> teken wissen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">cw</span> woord wijzigen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
+function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
+function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
+$('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('overlay').classList.contains('visible')){e.preventDefault();e.stopPropagation();closeModal()}else if(e.key==='?'&&document.activeElement!==$('editor')&&!$('overlay').classList.contains('visible'))showHelp()});updateSidebar();updateMeta();loadLevel(Math.max(0,Math.min(LEVELS.length-1,data.unlocked-1)));if(!data.name)showProfile(true);
+</script></body></html>
