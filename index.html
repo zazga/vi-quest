@@ -17,14 +17,14 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.3.4'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.3.5'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 const LEVELS=[
 {id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Bereik de <b>X</b> op de aangegeven positie.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
 {id:'02',world:'01 · MOVEMENT',name:'Word Runner',title:'Spring van woord naar woord',file:'words.txt',desc:'Vier trainingsrondes met meerdere checkpoints. Gebruik slimme woordbewegingen en leer het verschil tussen het begin en het einde van woorden.',goal:'Voltooi alle checkpoints in de juiste volgorde.',lines:['fox wolf raven dragon serpent'],start:[0,0],target:[0,15],optimal:34,hint:'Gebruik w voor een volgend woordbegin, b voor een vorig woordbegin en e voor een woordeinde. Bekijk je huidige checkpoint.'},
 {id:'03',world:'01 · MOVEMENT',name:'Edge of Line',title:'De rand van de wereld',file:'edges.txt',desc:'Leer binnen één regel direct naar het begin of einde te springen met 0 en $.',goal:'Plaats de cursor op de <b>!</b> aan het einde van de regel.',lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],optimal:1,hint:'Met 0 spring je naar het begin van de regel en met $ naar het laatste teken.'},
 {id:'04',world:'01 · MOVEMENT',name:'Warp Jump',title:'Teleporteren door tekst',file:'warp.txt',desc:'Leer door het hele bestand springen: gg voor de eerste regel, G voor de laatste en numberG om rechtstreeks naar een specifieke regel te gaan.',goal:'Bereik de aangegeven regel in het bestand.',lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],optimal:2,hint:'gg gaat naar de eerste regel, G naar de laatste regel en bijvoorbeeld 3G direct naar regel 3.'},
-{id:'05',world:'02 · EDITING',name:'Delete the Bug',title:'Vernietig de bug',file:'bugfix.txt',desc:'De cursor is een wapen. Verwijder het ongewenste teken in de code.',goal:'Verander <b>consoole.log</b> in <b>console.log</b>.',lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],optimal:2,hint:'Beweeg met l naar de extra o, en druk x om die te wissen.'},
+{id:'05',world:'02 · EDITING',name:'Delete the Bug',title:'Vernietig de bug',file:'bugfix.txt',desc:'Spoor een overbodig teken op in een meerregelig codebestand en verwijder het zonder de rest te veranderen.',goal:'Verwijder het overbodige teken uit de code.',lines:['// boot sequence','const message = "ready";','consoole.log(message);','launch();'],start:[0,0],expected:['// boot sequence','const message = "ready";','console.log(message);','launch();'],optimal:7,hint:'Zoek het woord met de dubbele letter. Verplaats de cursor naar de extra letter en verwijder alleen die letter met x.'},
 {id:'06',world:'02 · EDITING',name:'Insert Mode',title:'Schrijf je eerste rune',file:'rune.txt',desc:'In normal mode bestuur je tekst. Met i ga je schrijven; met Esc keer je terug.',goal:'Maak van <b>vim</b> het woord <b>vimmage</b> en eindig in NORMAL mode.',lines:['vim'],start:[0,3],expected:['vimmage'],requiredMode:'normal',optimal:7,hint:'Druk i, typ mage, en druk Esc. Let op: het doel is precies vimmage, zonder extra spaties.'},
 {id:'07',world:'02 · EDITING',name:'Append Spell',title:'De append-spreuk',file:'spell.txt',desc:'Met a voeg je tekst toe ná de huidige cursorpositie.',goal:'Verander <b>power</b> in <b>powerful</b> en keer terug naar normal mode.',lines:['power'],start:[0,4],expected:['powerful'],requiredMode:'normal',optimal:5,hint:'Druk a, typ ful en sluit af met Esc.'},
 {id:'08',world:'02 · EDITING',name:'Line Slayer',title:'Regelvernietiger',file:'cleanup.txt',desc:'Soms is een volledige regel waardeloos. Verwijder hem met één krachtige operator.',goal:'Verwijder alleen de regel <b>REMOVE_ME</b>.',lines:['keep this','REMOVE_ME','and this'],start:[1,2],expected:['keep this','and this'],optimal:2,hint:'dd verwijdert de volledige huidige regel.'},
@@ -63,10 +63,10 @@ const EXTRA_ROUNDS={
     {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Bereik de <b>X</b> op regel <b>5</b>.'}
   ],
   '05':[
-    {lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],goal:'Verwijder de extra <b>o</b> uit <b>consoole</b>.'},
-    {lines:['let scoree = 100;'],start:[0,9],expected:['let score = 100;'],goal:'Verwijder de extra <b>e</b> uit <b>scoree</b>.'},
-    {lines:['const vimm = true;'],start:[0,9],expected:['const vim = true;'],goal:'Verwijder de extra <b>m</b> uit <b>vimm</b>.'},
-    {lines:['returnn power;'],start:[0,5],expected:['return power;'],goal:'Verwijder de extra <b>n</b> uit <b>returnn</b>.'}
+    {lines:["// boot sequence","const message = \"ready\";","consoole.log(message);","launch();"],start:[0,0],expected:["// boot sequence","const message = \"ready\";","console.log(message);","launch();"],goal:"Corrigeer de typefout in de functieaanroep op regel 3."},
+    {lines:["function calculate() {","  let scoree = 100;","  return score;","}"],start:[3,0],expected:["function calculate() {","  let score = 100;","  return score;","}"],goal:"Verwijder de overbodige letter uit de variabelenaam op regel 2."},
+    {lines:["const hero = \"vim\";","const vimm = true;","console.log(hero);"],start:[2,5],expected:["const hero = \"vim\";","const vim = true;","console.log(hero);"],goal:"Herstel de variabelenaam op de middelste regel."},
+    {lines:["function power() {","  returnn 42;","}","power();"],start:[3,6],expected:["function power() {","  return 42;","}","power();"],goal:"Corrigeer het verkeerd gespelde sleutelwoord in de functie."}
   ],
   '06':[
     {lines:['vim'],start:[0,3],expected:['vimmage'],requiredMode:'normal',goal:'Maak <b>vimmage</b> en eindig in NORMAL mode.'},
@@ -129,7 +129,7 @@ const LESSONS=[
  [{keys:['w'],text:'Spring naar het begin van het volgende woord.'},{keys:['b'],text:'Spring terug naar het begin van het vorige woord.'},{keys:['e'],text:'Spring naar het einde van een woord.'}],
  [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['$'],text:'Spring naar het laatste teken van de huidige regel.'}],
  [{keys:['gg'],text:'Spring naar de eerste regel van het bestand.'},{keys:['G'],text:'Spring naar de laatste regel van het bestand.'},{keys:['numberG'],text:'Typ eerst een regelnummer en dan hoofdletter G (Shift+G): 3G gaat naar regel 3, 5G naar regel 5.'}],
- [{keys:['x'],text:'Verwijder het teken onder je cursor in NORMAL mode.'},{keys:['h'],text:'Beweeg één teken naar links om de cursor te positioneren.'},{keys:['l'],text:'Beweeg één teken naar rechts om de cursor te positioneren.'}],
+ [{keys:['x'],text:'Verwijder het teken onder de cursor in NORMAL mode. Zoek eerst het foute teken; de cursor staat niet automatisch op de juiste plek.'}],
  [{keys:['i'],text:'Ga naar INSERT mode en typ tekst vóór de cursor.'},{keys:['Esc'],text:'Keer terug naar NORMAL mode wanneer je klaar bent.'}],
  [{keys:['a'],text:'Ga naar INSERT mode, direct ná het huidige teken.'},{keys:['Esc'],text:'Sluit INSERT mode af.'}],
  [{keys:['d'],text:'Druk twee keer op d om de volledige huidige regel te verwijderen (dd).'},{keys:['j'],text:'Beweeg één regel omlaag, als je de juiste regel nog moet opzoeken.'},{keys:['k'],text:'Beweeg één regel omhoog, als je de juiste regel nog moet opzoeken.'}],
