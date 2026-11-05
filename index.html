@@ -48,9 +48,9 @@ const WORD_ROUNDS=[
 const EXTRA_ROUNDS={
   '10':[
     {lines:["bewaar deze regel","VERWIJDER DEZE REGEL","en bewaar deze ook"],start:[0,0],expected:["bewaar deze regel","en bewaar deze ook"],requiredMode:'normal',goal:"Verwijder de volledige regel <b>VERWIJDER DEZE REGEL</b>."},
-    {lines:["het kasteel staat // weg hiermee"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Verwijder <b> // weg hiermee</b> uit regel 1."},
+    {lines:["het kasteel staat VERWIJDER DIT"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Verwijder <b> VERWIJDER DIT</b> uit regel 1."},
     {lines:["DIT MAG WEG","de reis begint"],start:[0,0],expected:["de reis begint"],requiredMode:'normal',goal:"Verwijder de volledige eerste regel <b>DIT MAG WEG</b>."},
-    {lines:["de maan schijnt // extra tekst"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Verwijder <b> // extra tekst</b> uit regel 1."}
+    {lines:["de maan schijnt EXTRA TEKST"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Verwijder <b> EXTRA TEKST</b> uit regel 1."}
   ],
   '11':[
     {lines:["de kxt loopt"],start:[0,0],expected:["de kat loopt"],requiredMode:'normal',goal:"Vervang de <b>x</b> in <b>kxt</b> door <b>a</b>."},
