@@ -18,17 +18,17 @@
 <script>
 'use strict';
 const LEVELS=[
-{id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Navigeer naar de <b>X</b> zonder muis of pijltjestoetsen.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
+{id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Bereik de <b>X</b> op de aangegeven positie.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
 {id:'02',world:'01 · MOVEMENT',name:'Word Runner',title:'Spring van woord naar woord',file:'words.txt',desc:'Vier trainingsrondes met meerdere checkpoints. Gebruik slimme woordbewegingen en leer het verschil tussen het begin en het einde van woorden.',goal:'Voltooi alle checkpoints in de juiste volgorde.',lines:['fox wolf raven dragon serpent'],start:[0,0],target:[0,15],optimal:34,hint:'Gebruik w voor een volgend woordbegin, b voor een vorig woordbegin en e voor een woordeinde. Bekijk je huidige checkpoint.'},
 {id:'03',world:'01 · MOVEMENT',name:'Edge of Line',title:'De rand van de wereld',file:'edges.txt',desc:'Leer binnen één regel direct naar het begin of einde te springen met 0 en $.',goal:'Plaats de cursor op de <b>!</b> aan het einde van de regel.',lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],optimal:1,hint:'Met 0 spring je naar het begin van de regel en met $ naar het laatste teken.'},
-{id:'04',world:'01 · MOVEMENT',name:'Warp Jump',title:'Teleporteren door tekst',file:'warp.txt',desc:'Leer door het hele bestand springen: gg voor de eerste regel, G voor de laatste en numberG om rechtstreeks naar een specifieke regel te gaan.',goal:'Bereik de gevraagde regel met gg, G of numberG.',lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],optimal:2,hint:'gg gaat naar de eerste regel, G naar de laatste regel en bijvoorbeeld 3G direct naar regel 3.'},
+{id:'04',world:'01 · MOVEMENT',name:'Warp Jump',title:'Teleporteren door tekst',file:'warp.txt',desc:'Leer door het hele bestand springen: gg voor de eerste regel, G voor de laatste en numberG om rechtstreeks naar een specifieke regel te gaan.',goal:'Bereik de aangegeven regel in het bestand.',lines:['start','through the mist','past the mountain','across the river','the final X'],start:[0,0],target:[4,10],optimal:2,hint:'gg gaat naar de eerste regel, G naar de laatste regel en bijvoorbeeld 3G direct naar regel 3.'},
 {id:'05',world:'02 · EDITING',name:'Delete the Bug',title:'Vernietig de bug',file:'bugfix.txt',desc:'De cursor is een wapen. Verwijder het ongewenste teken in de code.',goal:'Verander <b>consoole.log</b> in <b>console.log</b>.',lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],optimal:2,hint:'Beweeg met l naar de extra o, en druk x om die te wissen.'},
 {id:'06',world:'02 · EDITING',name:'Insert Mode',title:'Schrijf je eerste rune',file:'rune.txt',desc:'In normal mode bestuur je tekst. Met i ga je schrijven; met Esc keer je terug.',goal:'Maak van <b>vim</b> het woord <b>vimmage</b> en eindig in NORMAL mode.',lines:['vim'],start:[0,3],expected:['vimmage'],requiredMode:'normal',optimal:7,hint:'Druk i, typ mage, en druk Esc. Let op: het doel is precies vimmage, zonder extra spaties.'},
 {id:'07',world:'02 · EDITING',name:'Append Spell',title:'De append-spreuk',file:'spell.txt',desc:'Met a voeg je tekst toe ná de huidige cursorpositie.',goal:'Verander <b>power</b> in <b>powerful</b> en keer terug naar normal mode.',lines:['power'],start:[0,4],expected:['powerful'],requiredMode:'normal',optimal:5,hint:'Druk a, typ ful en sluit af met Esc.'},
 {id:'08',world:'02 · EDITING',name:'Line Slayer',title:'Regelvernietiger',file:'cleanup.txt',desc:'Soms is een volledige regel waardeloos. Verwijder hem met één krachtige operator.',goal:'Verwijder alleen de regel <b>REMOVE_ME</b>.',lines:['keep this','REMOVE_ME','and this'],start:[1,2],expected:['keep this','and this'],optimal:2,hint:'dd verwijdert de volledige huidige regel.'},
 {id:'09',world:'03 · POWER MOVES',name:'Copy / Paste',title:'De kloonkamer',file:'clone.txt',desc:'Met yank en put dupliceer je regels zonder opnieuw te typen.',goal:'Maak een tweede regel met exact <b>echo "vim"</b>.',lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],optimal:3,hint:'yy kopieert de hele regel. p plakt die eronder.'},
-{id:'10',world:'03 · POWER MOVES',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Fouten herstellen is sneller dan perfect zijn. De undo-stack is jouw tijdmachine.',goal:'Herstel de volledige tekst <b>never give up</b> met undo.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
-{id:'11',world:'03 · POWER MOVES',name:'Search Hunter',title:'De jacht op de schaduw',file:'search.txt',desc:'Vind een doelwit in een groot bestand met de zoekopdracht / en Enter.',goal:'Zoek <b>shadow</b> en plaats de cursor op de eerste letter.',lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],optimal:8,hint:'Typ /shadow en druk Enter.'},
+{id:'10',world:'03 · POWER MOVES',name:'Undo Time',title:'Spoel de tijd terug',file:'undo.txt',desc:'Fouten herstellen is sneller dan perfect zijn. De undo-stack is jouw tijdmachine.',goal:'Herstel de oorspronkelijke tekst <b>never give up</b>.',lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],optimal:1,hint:'u maakt de vorige wijziging ongedaan.'},
+{id:'11',world:'03 · POWER MOVES',name:'Search Hunter',title:'De jacht op de schaduw',file:'search.txt',desc:'Vind een doelwit in een groot bestand met de zoekopdracht / en Enter.',goal:'Bereik de eerste letter van <b>shadow</b>.',lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],optimal:8,hint:'Typ /shadow en druk Enter.'},
 {id:'12',world:'03 · POWER MOVES',name:'Change Word',title:'Herschrijf het lot',file:'change.txt',desc:'Combineer operators en motions. Met cw vervang je snel een woord.',goal:'Verander <b>weak</b> in <b>strong</b> en eindig in normal mode.',lines:['the weak warrior rises'],start:[0,4],expected:['the strong warrior rises'],requiredMode:'normal',optimal:9,hint:'cw verwijdert het woord en opent insert mode. Typ strong, daarna Esc.'},
 {id:'13',world:'04 · MASTERY',name:'Find the Target',title:'Precisiesprong',file:'precision.txt',desc:'Ga direct naar een karakter op de huidige regel met f gevolgd door het karakter.',goal:'Spring naar de <b>@</b> op deze regel.',lines:['path ....... @ treasure'],start:[0,0],target:[0,13],optimal:2,hint:'f@ springt naar de eerstvolgende @ op de huidige regel.'},
 {id:'14',world:'04 · MASTERY',name:'Final Boss',title:'The Keyboard Warrior',file:'boss.txt',desc:'Je laatste uitdaging: navigeer, verwijder de corrupte regel en herstel de ontbrekende tekst. Snelheid én precisie tellen.',goal:'Houd alleen <b>QUEST COMPLETE</b> en <b>YOU ARE A VIM WARRIOR</b> over, in die volgorde. Eindig in normal mode.',lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',optimal:9,hint:'dd verwijdert de corrupte regel. Ga daarna met G en $ naar het einde, gebruik a om IOR toe te voegen, en Esc.'}
@@ -49,16 +49,16 @@ const EXTRA_ROUNDS={
     {lines:['. . . . . . .','. . . . . . .','. . . . . . .','. . . . . . X'],start:[0,12],target:[3,12],goal:'Navigeer naar de <b>X</b> rechtsonder.'}
   ],
   '03':[
-    {lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],goal:'Bereik de <b>!</b> aan het einde met <b>$</b>.'},
-    {lines:['START then find your way back'],start:[0,19],target:[0,0],goal:'Spring naar de <b>S</b> aan het begin met <b>0</b>.'},
+    {lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],goal:'Bereik het <b>!</b> aan het einde van de regel.'},
+    {lines:['START then find your way back'],start:[0,19],target:[0,0],goal:'Bereik de <b>S</b> aan het begin van de regel.'},
     {lines:['an entire line ends here!'],start:[0,0],target:[0,24],goal:'Bereik de laatste <b>!</b>.'},
     {lines:['first steps make a warrior'],start:[0,25],target:[0,0],goal:'Keer terug naar de eerste letter <b>f</b>.'}
   ],
   '04':[
-    {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Spring met <b>G</b> naar de laatste regel, bij de <b>X</b>.'},
-    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Spring met <b>gg</b> terug naar de eerste regel, bij de <b>X</b>.'},
-    {lines:['alpha','beta','X on line three','delta','omega'],start:[0,0],target:[2,0],goal:'Spring rechtstreeks naar regel <b>3</b> met <b>3G</b>.'},
-    {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Gebruik <b>5G</b> om naar regel <b>5</b> te teleporteren.'}
+    {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Bereik de <b>X</b> op de laatste regel.'},
+    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Bereik de <b>X</b> op de eerste regel.'},
+    {lines:['alpha','beta','X on line three','delta','omega'],start:[0,0],target:[2,0],goal:'Bereik de <b>X</b> op regel <b>3</b>.'},
+    {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Bereik de <b>X</b> op regel <b>5</b>.'}
   ],
   '05':[
     {lines:['consoole.log("victory");'],start:[0,4],expected:['console.log("victory");'],goal:'Verwijder de extra <b>o</b> uit <b>consoole</b>.'},
@@ -74,9 +74,9 @@ const EXTRA_ROUNDS={
   ],
   '07':[
     {lines:['power'],start:[0,4],expected:['powerful'],requiredMode:'normal',goal:'Voeg <b>ful</b> achter <b>power</b> toe.'},
-    {lines:['skill'],start:[0,4],expected:['skilled'],requiredMode:'normal',goal:'Maak met append <b>skilled</b>.'},
-    {lines:['quest'],start:[0,4],expected:['questing'],requiredMode:'normal',goal:'Maak met append <b>questing</b>.'},
-    {lines:['warrior'],start:[0,6],expected:['warriors'],requiredMode:'normal',goal:'Maak met append <b>warriors</b>.'}
+    {lines:['skill'],start:[0,4],expected:['skilled'],requiredMode:'normal',goal:'Verander <b>skill</b> in <b>skilled</b>.'},
+    {lines:['quest'],start:[0,4],expected:['questing'],requiredMode:'normal',goal:'Verander <b>quest</b> in <b>questing</b>.'},
+    {lines:['warrior'],start:[0,6],expected:['warriors'],requiredMode:'normal',goal:'Verander <b>warrior</b> in <b>warriors</b>.'}
   ],
   '08':[
     {lines:['keep this','REMOVE_ME','and this'],start:[1,2],expected:['keep this','and this'],goal:'Verwijder alleen de regel <b>REMOVE_ME</b>.'},
@@ -88,12 +88,12 @@ const EXTRA_ROUNDS={
     {lines:['echo "vim"'],start:[0,0],expected:['echo "vim"','echo "vim"'],goal:'Maak een tweede regel met <b>echo "vim"</b>.'},
     {lines:['const mana = 20;'],start:[0,0],expected:['const mana = 20;','const mana = 20;'],goal:'Dupliceer de regel <b>const mana = 20;</b>.'},
     {lines:['// keyboard warrior'],start:[0,5],expected:['// keyboard warrior','// keyboard warrior'],goal:'Kopieer de commentaarregel naar de regel eronder.'},
-    {lines:['save();'],start:[0,2],expected:['save();','save();'],goal:'Maak met yank en paste nog een regel <b>save();</b>.'}
+    {lines:['save();'],start:[0,2],expected:['save();','save();'],goal:'Maak een tweede regel met <b>save();</b>.'}
   ],
   '10':[
-    {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Herstel <b>never give up</b> met undo.'},
+    {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Herstel de originele tekst <b>never give up</b>.'},
     {lines:['practice makes perfect'],start:[0,0],setup:'deleteLast',expected:['practice makes perfect'],goal:'Herstel de ontbrekende laatste letter.'},
-    {lines:['vim is a superpower'],start:[0,0],setup:'deleteLast',expected:['vim is a superpower'],goal:'Draai de wijziging terug met <b>u</b>.'},
+    {lines:['vim is a superpower'],start:[0,0],setup:'deleteLast',expected:['vim is a superpower'],goal:'Herstel de originele tekst <b>vim is a superpower</b>.'},
     {lines:['mission complete'],start:[0,0],setup:'deleteLast',expected:['mission complete'],goal:'Herstel <b>mission complete</b>.'}
   ],
   '11':[
@@ -109,10 +109,10 @@ const EXTRA_ROUNDS={
     {lines:['the old spell works'],start:[0,4],expected:['the new spell works'],requiredMode:'normal',goal:'Vervang <b>old</b> door <b>new</b>.'}
   ],
   '13':[
-    {lines:['path ....... @ treasure'],start:[0,0],target:[0,13],goal:'Spring naar <b>@</b> met <b>f@</b>.'},
-    {lines:['search ....... # reward'],start:[0,0],target:[0,15],goal:'Spring naar <b>#</b> met <b>f#</b>.'},
-    {lines:['the route .... ! finish'],start:[0,0],target:[0,15],goal:'Spring naar <b>!</b> met <b>f!</b>.'},
-    {lines:['find ....... % secret'],start:[0,0],target:[0,13],goal:'Spring naar <b>%</b> met <b>f%</b>.'}
+    {lines:['path ....... @ treasure'],start:[0,0],target:[0,13],goal:'Bereik het teken <b>@</b>.'},
+    {lines:['search ....... # reward'],start:[0,0],target:[0,15],goal:'Bereik het teken <b>#</b>.'},
+    {lines:['the route .... ! finish'],start:[0,0],target:[0,15],goal:'Bereik het teken <b>!</b>.'},
+    {lines:['find ....... % secret'],start:[0,0],target:[0,13],goal:'Bereik het teken <b>%</b>.'}
   ],
   '14':[
     {lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',goal:'Verwijder de corrupte regel en herstel <b>WARRIOR</b>.'},
@@ -126,7 +126,7 @@ const LESSONS=[
  [{keys:['h'],text:'Beweeg één teken naar links.'},{keys:['j'],text:'Beweeg één regel omlaag.'},{keys:['k'],text:'Beweeg één regel omhoog.'},{keys:['l'],text:'Beweeg één teken naar rechts.'}],
  [{keys:['w'],text:'Spring naar het begin van het volgende woord.'},{keys:['b'],text:'Spring terug naar het begin van het vorige woord.'},{keys:['e'],text:'Spring naar het einde van een woord.'}],
  [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['$'],text:'Spring naar het laatste teken van de huidige regel.'}],
- [{keys:['gg'],text:'Spring naar de eerste regel van het bestand.'},{keys:['G'],text:'Spring naar de laatste regel van het bestand.'},{keys:['numberG'],text:'Vervang number door het regelnummer: 3G springt naar regel 3, 5G naar regel 5.'}],
+ [{keys:['gg'],text:'Spring naar de eerste regel van het bestand.'},{keys:['G'],text:'Spring naar de laatste regel van het bestand.'},{keys:['numberG'],text:'Typ eerst een regelnummer en dan hoofdletter G (Shift+G): 3G gaat naar regel 3, 5G naar regel 5.'}],
  [{keys:['x'],text:'Verwijder het teken onder je cursor in NORMAL mode.'},{keys:['h'],text:'Beweeg één teken naar links om de cursor te positioneren.'},{keys:['l'],text:'Beweeg één teken naar rechts om de cursor te positioneren.'}],
  [{keys:['i'],text:'Ga naar INSERT mode en typ tekst vóór de cursor.'},{keys:['Esc'],text:'Keer terug naar NORMAL mode wanneer je klaar bent.'}],
  [{keys:['a'],text:'Ga naar INSERT mode, direct ná het huidige teken.'},{keys:['Esc'],text:'Sluit INSERT mode af.'}],
@@ -238,12 +238,12 @@ function evaluate(){
  finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
 function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
 function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
-if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){setCursor(count?Math.min(Number(count),lines.length)-1:0,0);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
+if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){const targetLine=count?Number(count)-1:0;setCursor(targetLine,0);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
 if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
-switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':setCursor(count?Math.min(Number(count),lines.length)-1:lines.length-1,0);break;case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}count=''}
+switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':{const targetLine=count?Number(count)-1:lines.length-1;setCursor(targetLine,0);break}case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}count=''}
 function inputKey(e){
  if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
- const k=e.key;
+ const k=(mode==='normal' && e.code==='KeyG' && e.shiftKey)?'G':e.key;
  if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(!questReady)return;
