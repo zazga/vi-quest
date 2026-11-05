@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.3.2'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.3.3'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 const LEVELS=[
 {id:'01',world:'01 · MOVEMENT',name:'First Steps',title:'De eerste stappen',file:'movement.txt',desc:'Een echte keyboardwarrior laat de pijltjestoetsen met rust. Verplaats de cursor met de vier Vim-richtingen.',goal:'Bereik de <b>X</b> op de aangegeven positie.',lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],optimal:12,hint:'Gebruik j om omlaag te gaan en l om naar rechts te bewegen.'},
@@ -247,6 +247,8 @@ switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCurso
 function inputKey(e){
  if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
  const k=(mode==='normal' && e.code==='KeyG' && e.shiftKey)?'G':e.key;
+ // Modifier-only keydown events must not consume the pending Vim count.
+ if(['Shift','Control','Alt','Meta','CapsLock','NumLock','Fn','FnLock'].includes(k))return;
  if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(!questReady)return;
