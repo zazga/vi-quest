@@ -54,7 +54,7 @@ const EXTRA_ROUNDS={
   ],
   '11':[
     {lines:["the cxt waits"],expected:["the cat waits"],start:[0,5],requiredMode:'normal',goal:"Herstel de naam van het dier."},
-    {lines:["vim is g00d"],expected:["vim is good"],start:[0,8],requiredMode:'normal',goal:"Corrigeer beide foutieve tekens."},
+    {lines:["vim is gXd"],expected:["vim is good"],start:[0,8],requiredMode:'normal',goal:"Corrigeer beide foutieve tekens."},
     {lines:["I h@te bugs"],expected:["I hate bugs"],start:[0,3],requiredMode:'normal',goal:"Corrigeer de foutieve letter."},
     {lines:["the b0ss arrived"],expected:["the boss arrived"],start:[0,5],requiredMode:'normal',goal:"Herstel het verkeerde teken."}
   ],
@@ -157,11 +157,11 @@ const LESSONS=[
  [{keys:["dd"],text:"Verwijder de hele huidige regel."},{keys:["D"],text:"Verwijder vanaf de cursor tot het einde van de regel."}],
  [{keys:["r{teken}"],text:"Vervang het teken onder de cursor door het volgende teken."},{keys:["s"],text:"Verwijder één teken en start INSERT mode."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:["cw"],text:"Wijzig het woord vanaf de cursor."},{keys:["cc"],text:"Herschrijf de hele huidige regel."},{keys:["C"],text:"Herschrijf vanaf de cursor tot aan het regeleinde."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
- [{keys:['y'],text:'Druk twee keer op y om de volledige regel te kopiëren (yy).'},{keys:['p'],text:'Plak de gekopieerde regel onder de cursor.'}],
+ [{keys:['yy'],text:'Kopieer de hele huidige regel.'},{keys:['p'],text:'Plak de gekopieerde regel onder de cursor.'}],
  [{keys:['u'],text:'Maak de laatste wijziging ongedaan; je kunt dit vaker achter elkaar doen.'}],
  [{keys:['/'],text:'Open een zoekopdracht en typ daarna het gezochte woord.'},{keys:['Enter'],text:'Start de zoekopdracht en spring naar de match.'},{keys:['n'],text:'Spring naar de volgende match.'}],
- [{keys:['f'],text:'Typ f gevolgd door één doelteken, zoals f@, om ernaartoe te springen.'}],
- [{keys:['d'],text:'Druk twee keer op d om de ongewenste regel te verwijderen (dd).'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
+ [{keys:['f{teken}'],text:'Zoek het volgende voorkomen van het getypte teken op de huidige regel.'}],
+ [{keys:['dd'],text:'Verwijder de volledige huidige regel.'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
 ];
 let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
 function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
