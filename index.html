@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.8.3'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.9.0'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -94,7 +94,14 @@ function questRoundType(round){
  if(!Number.isInteger(round)||round<0||round>=QUEST_ROUND_TYPES.length)throw Error('Ongeldig quest-rondenummer');
  return QUEST_ROUND_TYPES[round];
 }
+const TEST_ALL_LEVELS=true; // Temporary playtesting shortcut.
 const DYNAMIC_QUESTS=Object.freeze({
+ '01':Object.freeze({skill:'movement',generator:'movement-basic',rounds:QUEST_ROUND_TYPES}),
+ '03':Object.freeze({skill:'movement',generator:'movement-edges',rounds:QUEST_ROUND_TYPES}),
+ '04':Object.freeze({skill:'movement',generator:'movement-warp',rounds:QUEST_ROUND_TYPES}),
+ '15':Object.freeze({skill:'search',generator:'search-hunter',rounds:QUEST_ROUND_TYPES}),
+ '16':Object.freeze({skill:'find',generator:'find-target',rounds:QUEST_ROUND_TYPES}),
+ '17':Object.freeze({skill:'mastery',generator:'final-boss',rounds:QUEST_ROUND_TYPES}),
  '05':Object.freeze({skill:'insert',generator:'insert-append',rounds:QUEST_ROUND_TYPES}),
  '07':Object.freeze({skill:'insert',generator:'line-insert',rounds:QUEST_ROUND_TYPES}),
  '08':Object.freeze({skill:'insert',generator:'open-lines',rounds:QUEST_ROUND_TYPES}),
@@ -111,6 +118,7 @@ function createDynamicQuest(config,seed){
  if(config.generator==='character-delete'){
   return config.rounds.map((type,round)=>generateCharacterDeleteRound(seed,round));
  }
+ if(['movement-basic','movement-edges','movement-warp','search-hunter','find-target','final-boss'].includes(config.generator))return config.rounds.map((_,round)=>generateNavigationRound(config.generator,seed,round));
  if(config.generator==='copy-paste'||config.generator==='undo')return config.rounds.map((_,round)=>generateUtilityRound(config.generator,seed,round));
  if(config.generator==='word-delete'||config.generator==='line-delete')return config.rounds.map((_,round)=>generateDynamicDeleteRound(config.generator,seed,round));
  if(config.generator!=='character-delete')return config.rounds.map((_,round)=>generateEditingRound(config.generator,seed,round));
@@ -268,10 +276,77 @@ function generateUtilityRound(kind,seed,round){
  validateQuestExercise(ex);return ex;
 }
 
+
+function questShuffle(seed,kind,round){
+ const random=seededQuestRandom([QUEST_GENERATOR_VERSION,seed,kind,round].join('|'));
+ const words=[...QUEST_TOKENS];
+ for(let i=words.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[words[i],words[j]]=[words[j],words[i]]}
+ return words;
+}
+function generateWordRunnerRounds(seed){
+ const paths=[
+ [[1,'first'],[2,'last'],[3,'first'],[4,'last']],
+ [[2,'last'],[0,'first'],[3,'last'],[1,'first']],
+ [[3,'first'],[4,'last'],[1,'first'],[2,'last']],
+ [[4,'first'],[1,'last'],[3,'first'],[0,'last']]
+ ];
+ return paths.map((goals,round)=>({words:questShuffle(seed,'word-runner',round).slice(0,5),goals,rule:round===2?'Gebruik w, b en e; h, j, k en l zijn verboden.':'Gebruik Vim-bewegingen om de woordgrenzen te vinden.',forbidden:round===2?['h','j','k','l']:[]}));
+}
+function generateNavigationRound(kind,seed,round){
+ const phase=questRoundType(round),[a,b,c,d,e,f,g,h]=questShuffle(seed,kind,round);
+ let lines,expected,target,goal,focus;
+ if(kind==='movement-basic'){
+  const tasks=[
+   [[a+' '+b,c+' '+d],[1,0],'Bereik de eerste letter van '+c+' op regel 2.','j'],
+   [[a+' '+b,c+' '+d],[0,a.length+1],'Bereik de eerste letter van '+b+' op regel 1.','l'],
+   [[a+' '+b,c+' '+d,e+' '+f],[2,e.length+1],'Bereik de eerste letter van '+f+' op regel 3.','combine'],
+   [[a+' '+b,c+' '+d,e+' '+f,g+' '+h],[3,g.length+1],'Bereik de eerste letter van '+h+' op regel 4.','prove']
+  ];
+  [lines,target,goal,focus]=tasks[round];
+ }else if(kind==='movement-edges'){
+  const tasks=[
+   [[a+' '+b],[0,(a+' '+b).length-1],'Bereik de laatste letter van '+b+' op regel 1.','$'],
+   [[a+' '+b,c+' '+d],[1,0],'Bereik de eerste letter van '+c+' op regel 2.','0'],
+   [[a+' '+b,c+' '+d,e+' '+f],[2,(e+' '+f).length-1],'Bereik de laatste letter van '+f+' op regel 3.','combine'],
+   [[a+' '+b,c+' '+d,e+' '+f],[1,0],'Bereik de eerste letter van '+c+' op regel 2.','prove']
+  ];
+  [lines,target,goal,focus]=tasks[round];
+ }else if(kind==='movement-warp'){
+  lines=[a,b,c,d,e,f,g,h].map(x=>x+' '+a);
+  target=[[7,0],[0,0],[4,0],[6,0]][round];
+  // gg practice starts on 1:1; give it a nonzero starting cursor.
+  if(round===1)target=[0,(a+' '+a).length-1];
+  goal='Bereik regel '+(target[0]+1)+', kolom '+(target[1]+1)+' ('+lines[target[0]]+').';
+  focus=['G','gg','numberG','combine'][round];
+ }else if(kind==='search-hunter'){
+  if(round===0){lines=[b+' '+c,d+' '+e,a+' '+f,g+' '+h];target=[2,0];goal='Zoek het woord '+a+' op regel 3.'}
+  else if(round===1){lines=[b+' '+a,c+' '+d,e+' '+a,f+' '+g];target=[2,e.length+1];goal='Bereik de tweede vindplaats van '+a+' op regel 3.'}
+  else if(round===2){lines=[b+' '+a,c+' '+d,a+' '+e,f+' '+a];target=[3,f.length+1];goal='Bereik de derde vindplaats van '+a+' op regel 4.'}
+  else{lines=[b+' '+c,a+' '+d,e+' '+a,f+' '+g,a+' '+h];target=[4,0];goal='Bereik de derde vindplaats van '+a+' op regel 5.'}
+  focus=round===0?'/':'n';
+ }else if(kind==='find-target'){
+  const mark=['@','#','!','?'][round];
+  if(round===0){lines=[a+' '+mark+' '+b];target=[0,a.length+1];goal='Bereik het teken '+mark+' op regel 1.'}
+  else if(round===1){lines=[a+' '+mark+' '+b+' '+mark+' '+c];target=[0,a.length+b.length+4];goal='Bereik het tweede teken '+mark+' op regel 1.'}
+  else if(round===2){lines=[a+' '+b,c+' '+mark+' '+d+' '+mark+' '+e];target=[1,c.length+d.length+4];goal='Bereik het tweede teken '+mark+' op regel 2.'}
+  else{lines=[a+' '+b,c+' '+d,e+' '+mark+' '+f+' '+mark+' '+g];target=[2,e.length+f.length+4];goal='Bereik het tweede teken '+mark+' op regel 3.'}
+  focus='f';
+ }else if(kind==='final-boss'){
+  if(round===0){lines=[a,b,c];expected=[a,c];goal='Verwijder de volledige regel 2 ('+b+').';focus='dd'}
+  else if(round===1){lines=[a+' '+b,c+'#'+d,e+' '+f];expected=[a+' '+b,c+d,e+' '+f];goal='Verwijder het teken # tussen '+c+' en '+d+' op regel 2.';focus='x'}
+  else if(round===2){lines=[a,b+' '+c,d];expected=[a,b+' '+c,e,d];goal='Voeg een nieuwe regel met alleen '+e+' direct onder regel 2 toe.';focus='o'}
+  else{lines=[a+' '+b,c,d+'#'+e,f+' '+g];expected=[a+' '+b,d+e,f+' '+g+' '+h];goal='Verwijder de volledige regel 2 ('+c+'), verwijder het # tussen '+d+' en '+e+' op de nieuwe regel 2, en voeg precies één spatie gevolgd door '+h+' achteraan de laatste regel toe.';focus='prove'}
+ }else throw Error('Onbekende navigatiegenerator '+kind);
+ if(!expected)expected=[...lines];
+ const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='final-boss'?'mastery':'movement',difficulty:phase.difficulty,round,roundType:phase.id,lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind}};
+ if(target)ex.target=target;
+ validateQuestExercise(ex);return ex;
+}
+
 function validateQuestExercise(ex){
- if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.expected.length===0||(!['open-lines','line-delete','copy-paste','undo'].includes(ex.metadata?.solutionKind) && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
+ if(!ex||!Array.isArray(ex.lines)||!Array.isArray(ex.expected)||ex.lines.length===0||ex.expected.length===0||(!['open-lines','line-delete','copy-paste','undo','final-boss'].includes(ex.metadata?.solutionKind) && ex.lines.length!==ex.expected.length))throw Error('Ongeldig opdrachtformaat');
  if(!ex.lines.every(x=>typeof x==='string')||!ex.expected.every(x=>typeof x==='string'))throw Error('Opdracht bevat geen gewone tekst');
- if(ex.lines.length===ex.expected.length&&ex.lines.every((x,i)=>x===ex.expected[i]))throw Error('Opdracht heeft geen wijziging');
+ if(ex.lines.length===ex.expected.length&&ex.lines.every((x,i)=>x===ex.expected[i])&&!ex.target)throw Error('Opdracht heeft geen wijziging');
  if(ex.start[0]!==0||ex.start[1]!==0)throw Error('Generator moet op 1:1 starten');
  if(!ex.goal||!ex.skill||!ex.seed)throw Error('Onvolledige generatoropdracht');
  if(ex.roundType && (!Number.isInteger(ex.round)||questRoundType(ex.round).id!==ex.roundType))throw Error('Rondetype en rondenummer komen niet overeen');
@@ -300,7 +375,7 @@ const LEVELS=[
 {id:'16',world:'06 · MASTERY',name:'Find the Target',title:'Precisiesprong',file:'precision.txt',desc:'Ga direct naar een karakter op de huidige regel met f gevolgd door het karakter.',goal:'Spring naar de <b>@</b> op deze regel.',lines:['path ....... @ treasure'],start:[0,0],target:[0,13],optimal:2,hint:'f@ springt naar de eerstvolgende @ op de huidige regel.'},
 {id:'17',world:'06 · MASTERY',name:'Final Boss',title:'The Keyboard Warrior',file:'boss.txt',desc:'Je laatste uitdaging: navigeer, verwijder de corrupte regel en herstel de ontbrekende tekst. Snelheid én precisie tellen.',goal:'Houd alleen <b>QUEST COMPLETE</b> en <b>YOU ARE A VIM WARRIOR</b> over, in die volgorde. Eindig in normal mode.',lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',optimal:9,hint:'dd verwijdert de corrupte regel. Ga daarna met G en $ naar het einde, gebruik a om IOR toe te voegen, en Esc.'}];
 // Level 02 is a four-round quest. Restrictions vary by round, not by skill.
-const WORD_ROUNDS=[
+let WORD_ROUNDS=[
  {words:['fox','wolf','raven','dragon','serpent'],goals:[[1,'first'],[2,'last'],[3,'last'],[4,'first']],rule:'Alle bewegingen toegestaan.',forbidden:[]},
  {words:['ember','rune','mage','shield','sword'],goals:[[2,'first'],[3,'last'],[1,'first'],[4,'last']],rule:'Alle bewegingen toegestaan: kies je eigen route.',forbidden:[]},
  {words:['pixel','cursor','buffer','window','terminal'],goals:[[1,'last'],[3,'first'],[4,'last'],[2,'first']],rule:'Challenge: h, j, k en l zijn in deze ronde verboden.',forbidden:['h','j','k','l']},
@@ -605,10 +680,11 @@ function inputKey(e){
  }
 }
 function loadLevel(i){
- if(i+1>data.unlocked)return;
+ if(!TEST_ALL_LEVELS&&i+1>data.unlocked)return;
  clearInterval(clock);idx=i;const l=LEVELS[i];
  mode='normal';pending='';count='';command='';reg=null;undo=[];redo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
  currentQuestSeed='run-'+Date.now()+'-'+(++questRunCounter);
+ if(idx===1)WORD_ROUNDS=generateWordRunnerRounds(currentQuestSeed);
  generatedQuestRounds=dynamicQuestForLevel(l.id,currentQuestSeed);
  if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
  else prepareRound(0);
@@ -616,7 +692,7 @@ function loadLevel(i){
  $('levelTitle').textContent=l.title;$('description').textContent=l.desc;$('filename').textContent=l.file;
  $('timer').textContent='00:00';$('notification').textContent='';
  updateSidebar();updateMeta();updateWordUI();render();showLesson();
-}function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
+}function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=!TEST_ALL_LEVELS&&i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
 function updateMeta(){$('playerLabel').textContent=(data.name||'GUEST').toUpperCase();$('totalScore').textContent=Object.values(data.bests).reduce((a,b)=>a+b,0).toLocaleString('nl-NL')+' XP';let done=Object.keys(data.completed).length;$('progressLabel').textContent=done+'/'+LEVELS.length;$('progressBar').style.width=(100*done/LEVELS.length)+'%';renderBoard()}
 function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="leader">'+board.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>LV ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
