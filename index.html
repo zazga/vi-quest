@@ -148,373 +148,21 @@ const EXTRA_ROUNDS={
 const LESSONS=[
  [{keys:['h'],text:'Beweeg één teken naar links.'},{keys:['j'],text:'Beweeg één regel omlaag.'},{keys:['k'],text:'Beweeg één regel omhoog.'},{keys:['l'],text:'Beweeg één teken naar rechts.'}],
  [{keys:['w'],text:'Spring naar het begin van het volgende woord.'},{keys:['b'],text:'Spring terug naar het begin van het vorige woord.'},{keys:['e'],text:'Spring naar het einde van een woord.'}],
- [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['
-let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
-function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
-function currentExercise(){return idx===1?null:currentRounds()[roundIndex]}
-function wordPosition(round,step){const r=WORD_ROUNDS[round],g=r.goals[step],index=g[0];let start=0;for(let i=0;i<index;i++)start+=r.words[i].length+1;return [0,start+(g[1]==='last'?r.words[index].length-1:0)]}
-function wordTaskText(){const r=WORD_ROUNDS[wordRound],g=r.goals[wordStep];return `${g[1]==='first'?'eerste':'laatste'} letter van <b>${r.words[g[0]]}</b>`}
-function updateWordUI(){
- const p=$('questProgress');p.style.display='block';
- if(idx===1){
-  const r=WORD_ROUNDS[wordRound];
-  p.innerHTML=`<b>RONDE ${wordRound+1}/${WORD_ROUNDS.length}</b><div class="dots">${r.goals.map((_,i)=>i<wordStep?'●':i===wordStep?'◉':'○').join(' ')}</div><b>VOLGENDE TARGET:</b> ${wordTaskText()}<div>${r.rule}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> Raak achtereenvolgens de aangeduide letters. '+wordTaskText()+'.';
- } else {
-  const ex=currentExercise();
-  p.innerHTML=`<b>RONDE ${roundIndex+1}/${currentRounds().length}</b><div style="margin-top:5px">${ex.goal}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> '+ex.goal;
- }
-}
-function prepareRound(r){
- roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
- mode='normal';pending='';count='';command='';reg=null;undo=[];searchTerm='';searchMatch=null;lastMessage='';
- if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
- updateWordUI();render();
-}
-function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
-let introStage='';
-function showLesson(){
- questReady=false;introStage='keys';
- const l=LEVELS[idx];
- const rows=LESSONS[idx].map(item=>`<div class="lesson-item"><div class="lesson-keys">${item.keys.map(key=>`<span class="lesson-key">${escapeHtml(key)}</span>`).join('')}</div><div class="lesson-text">${escapeHtml(item.text)}</div></div>`).join('');
- showModal(`<div class="intro-step">01 / 02 · LEER DE TOETSEN</div><div class="eyebrow" style="margin-top:12px">TRAINING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>Leer eerst de bewegingen en commando's die in deze quest handig zijn. Je hoeft niet alle mogelijkheden uit je hoofd te kennen: probeer ze straks uit.</p><div class="lesson-list">${rows}</div><div class="modalactions"><button class="btn primary" id="toQuest">GA NAAR QUEST →</button></div>`);
- $('toQuest').onclick=showQuestBriefing;
-}
-function showQuestBriefing(){
- introStage='quest';const l=LEVELS[idx];
- const special=idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
- showModal(`<div class="intro-step">02 / 02 · JOUW MISSIE</div><div class="eyebrow" style="margin-top:12px">QUEST BRIEFING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${escapeHtml(l.desc)}</p><div class="quest-preview"><strong>OBJECTIVE //</strong><div>${l.goal}</div></div>${special}<p class="tiny">BESTAND: ${escapeHtml(l.file)} · START IN NORMAL MODE</p><div class="modalactions"><button class="btn" id="backToKeys">← TOETSEN</button><button class="btn primary" id="beginQuest">START QUEST →</button></div>`);
- $('backToKeys').onclick=showLesson;
- $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
-}
-const STORAGE='viquest.v1';const BOARD='viquest.board.v1';
-function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-let data=read(STORAGE,{name:'',unlocked:1,bests:{},completed:{}});let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
-const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
-const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
-function jumpToLine(number){const line=clamp(Math.trunc(number),1,lines.length);setCursor(line-1,0)}
-function nextWord(){let rr=row,cc=col+1;while(rr<lines.length){let s=lines[rr];if(cc>=s.length){rr++;cc=0;continue}while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}if(cc>0&&charClass(s[cc])===charClass(s[cc-1])&&charClass(s[cc])!=='space'){let t=charClass(s[cc]);while(cc<s.length&&charClass(s[cc])===t)cc++;while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}}setCursor(rr,cc);return}setCursor(lines.length-1,lines.at(-1).length);}
-function prevWord(){let rr=row,cc=col-1;while(rr>=0){let s=lines[rr];if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}while(cc>=0&&charClass(s[cc])==='space')cc--;if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}let t=charClass(s[cc]);while(cc>0&&charClass(s[cc-1])===t)cc--;setCursor(rr,cc);return}}
-function endWord(){let s=lines[row],c=col+1,r=row;while(r<lines.length){s=lines[r];while(c<s.length&&charClass(s[c])==='space')c++;if(c<s.length){let t=charClass(s[c]);while(c+1<s.length&&charClass(s[c+1])===t)c++;setCursor(r,c);return}r++;c=0}}
-function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift()}
-function performUndo(){const x=undo.pop();if(x){lines=x.lines;mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}
-function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.length>1)lines.splice(row,1);else lines[0]='';setCursor(Math.min(row,lines.length-1),0)}
-function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
-function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
-function deleteChar(){if(col>=lines[row].length)return;snapshot();reg={type:'char',value:lines[row][col]};lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1);setCursor(row,col)}
-function substituteCommand(cmd){
- // Support :s/pattern/replacement/[g] on the current line and :%s/.../.../[g] on the entire buffer.
- const match=cmd.match(/^(%?)s\/([^/]*)\/([^/]*)(?:\/(g?)?)?$/);
- if(!match)return false;
- const [,all,pattern,replacement,globalFlag]=match;
- if(!pattern){notice('Substitutie vereist een zoekpatroon.');return true}
- let regex;
- try{regex=new RegExp(pattern,globalFlag==='g'?'g':'')}catch{notice('Ongeldig zoekpatroon: '+pattern);return true}
- let changes=0;const start=all?0:row,end=all?lines.length:row+1;
- const updated=[...lines];
- for(let i=start;i<end;i++){
-  let replaced=0;
-  updated[i]=lines[i].replace(regex,()=>{replaced++;return replacement});
-  changes+=replaced;
- }
- if(changes){snapshot();lines=updated;setCursor(row,col);searchMatch=null;notice(changes+' vervanging'+(changes===1?'':'en')+' uitgevoerd.');}
- else notice('Patroon niet gevonden: '+pattern);
- return true;
-}
-function findSearch(term,fromAfter=true){if(!term)return false;let startR=row,startC=col+(fromAfter?1:0);for(let d=0;d<lines.length;d++){const r=(startR+d)%lines.length;const c=lines[r].indexOf(term,d===0?startC:0);if(c>=0){setCursor(r,c);searchMatch=[r,c,term.length];return true}}if(fromAfter){for(let r=0;r<=row;r++){let c=lines[r].indexOf(term);if(c>=0&&(r!==row||c<=col)){setCursor(r,c);searchMatch=[r,c,term.length];return true}}}return false}
-function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=>{if(!finished){elapsed=Math.floor((Date.now()-started)/1000);$('timer').textContent=fmtTime(elapsed)}},250)}function fmtTime(t){return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
-function notice(s){lastMessage=s;$('notification').textContent=s}
-function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':count?('COUNT: '+count+' · wacht op beweging'):'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
-function levelComplete(){
- if(idx===1)return wordRound===WORD_ROUNDS.length-1&&wordStep===WORD_ROUNDS[wordRound].goals.length;
- const ex=currentExercise();
- if(ex.expected&&JSON.stringify(lines)!==JSON.stringify(ex.expected))return false;
- if(ex.target&&(row!==ex.target[0]||col!==ex.target[1]))return false;
- if(ex.requiredMode&&mode!==ex.requiredMode)return false;
- return !!(ex.expected||ex.target);
-}
-function evaluate(){
- if(!questReady||finished)return;
- if(idx===1){
-  if(wordStep<WORD_ROUNDS[wordRound].goals.length){const pos=wordPosition(wordRound,wordStep);
-   if(row===pos[0]&&col===pos[1]){wordStep++;
-    if(wordStep>=WORD_ROUNDS[wordRound].goals.length&&wordRound<WORD_ROUNDS.length-1){setWordRound(wordRound+1);notice('Ronde voltooid! Nieuwe tekst, nieuwe route.');render();return}
-    if(wordStep<WORD_ROUNDS[wordRound].goals.length){updateWordUI();notice('Checkpoint gehaald! Op naar de volgende letter.');render()}
-   }
-  }
- }else if(levelComplete()&&roundIndex<currentRounds().length-1){
-  prepareRound(roundIndex+1);notice('Ronde voltooid! Nieuwe opdracht.');render();return;
- }
- if(levelComplete()){
- finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
-function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
-function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
-if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){jumpToLine(count?Number(count):1);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
-if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
-switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':jumpToLine(count?Number(count):lines.length);break;case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}if(!pending)count=''}
-function inputKey(e){
- if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
- const k=(mode==='normal' && e.code==='KeyG' && e.shiftKey)?'G':e.key;
- // Modifier-only keydown events must not consume the pending Vim count.
- if(['Shift','Control','Alt','Meta','CapsLock','NumLock','Fn','FnLock'].includes(k))return;
- if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
- if(e.ctrlKey||e.metaKey||e.altKey)return;
- if(!questReady)return;
- if(idx===1&&mode==='normal'&&WORD_ROUNDS[wordRound].forbidden.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
- if(k.startsWith('Arrow')){notice('Geen pijltjes! Gebruik h j k l.');return}
- if(k==='Tab')return;
- if(k==='Escape'){
-  // Prevent this same Escape event from dismissing the victory modal opened by evaluate().
-  e.stopPropagation();
-  if(mode==='insert'&&col>0)col--;
-  mode='normal';pending='';count='';command='';render();evaluate();if(idx===5&&!finished){notice('Huidige tekst: '+JSON.stringify(lines[0])+' · vereist: \"vimmage\" in NORMAL mode');render()}return;
- }
- if(!started)startTimer();
- if(finished)return;
- keys++;
- history.push(k==='Enter'?'↵':k==='Backspace'?'⌫':k==='Delete'?'⌦':k===' '?'␣':k);
- if(history.length>40)history.shift();
- lastMessage='';
- if(mode==='normal'){
-  if(k==='Delete')deleteChar();
-  else if(k!=='Backspace'&&k!=='Enter')handleNormal(k);
- }else if(mode==='insert'){
-  if(k==='Backspace'){
-   if(col>0){snapshot();lines[row]=lines[row].slice(0,col-1)+lines[row].slice(col);col--}
-   else if(row>0){snapshot();let len=lines[row-1].length;lines[row-1]+=lines[row];lines.splice(row,1);row--;col=len}
-  }else if(k==='Delete')deleteForward();
-  else if(k==='Enter'){
-   snapshot();let tail=lines[row].slice(col);lines[row]=lines[row].slice(0,col);lines.splice(row+1,0,tail);row++;col=0;
-  }else if(k.length===1)insertText(k);
- }else if(mode==='search'||mode==='command'){
-  if(k==='Enter'){
-   if(mode==='search'){searchTerm=command;if(!findSearch(searchTerm,false))notice('Niet gevonden: '+searchTerm)}
-   else if(command==='w'||command==='wq')notice('Bestand opgeslagen (simulatie).');
-   else if(command==='q')notice('Deze quest sluit je niet zomaar af ;)');
-   else if(!substituteCommand(command))notice('Onbekende opdracht: :'+command);
-   mode='normal';command='';
-  }else if(k==='Backspace')command=command.slice(0,-1);
-  else if(k==='Delete'){} // command cursor is always at the end
-  else if(k.length===1)command+=k;
- }
- render();evaluate();
- // Help identify visually subtle mismatches such as trailing spaces.
- if(idx===5&&!finished&&mode==='normal'&&lines.join('\n')!==currentExercise().expected.join('\n')){
-  notice('Nog niet exact: '+JSON.stringify(lines[0])+' · doel: '+JSON.stringify(currentExercise().expected[0]));render();
- }
-}
-function loadLevel(i){
- if(i+1>data.unlocked)return;
- clearInterval(clock);idx=i;const l=LEVELS[i];
- mode='normal';pending='';count='';command='';reg=null;undo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
- if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
- else prepareRound(0);
- $('stageLabel').textContent='TRIAL '+l.id+' / '+LEVELS.length+' · '+l.world;
- $('levelTitle').textContent=l.title;$('description').textContent=l.desc;$('filename').textContent=l.file;
- $('timer').textContent='00:00';$('notification').textContent='';
- updateSidebar();updateMeta();updateWordUI();render();showLesson();
-}function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
-function updateMeta(){$('playerLabel').textContent=(data.name||'GUEST').toUpperCase();$('totalScore').textContent=Object.values(data.bests).reduce((a,b)=>a+b,0).toLocaleString('nl-NL')+' XP';let done=Object.keys(data.completed).length;$('progressLabel').textContent=done+'/'+LEVELS.length;$('progressBar').style.width=(100*done/LEVELS.length)+'%';renderBoard()}
-function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="leader">'+board.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>LV ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
-function showModal(content){$('modal').innerHTML=content+'<div class="modal-esc-hint">Druk op <kbd>Esc</kbd> om te sluiten</div>';$('overlay').classList.add('visible')}function closeModal(){if(introStage){introStage='';questReady=true} $('overlay').classList.remove('visible');$('editor').focus()}
-function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">LOCAL PLAYER PROFILE</div><h3>${first?'Welkom bij Vi Quest':'Spelersprofiel'}</h3><p>${first?'Kies je warrior-naam om je voortgang en scores lokaal in deze browser te bewaren.':'Je voortgang wordt lokaal op dit apparaat bewaard. Een nieuw schermnaam verandert je toekomstige scores, niet je oude scores.'}</p><label class="tiny" for="nameInput">WARRIOR NAME</label><input id="nameInput" maxlength="20" placeholder="Bijv. NeoVimNinja" value="${escapeHtml(data.name)}" /><div class="modalactions">${first?'':'<button class="btn" id="profileCancel">ANNULEREN</button>'}<button class="btn primary" id="profileSave">${first?'START QUEST →':'OPSLAAN'}</button></div>`);$('nameInput').focus();$('nameInput').select();$('profileSave').onclick=()=>{data.name=$('nameInput').value.trim().slice(0,20)||'Guest';save();updateMeta();closeModal();if(first)showLesson()};$('nameInput').onkeydown=e=>{if(e.key==='Enter')$('profileSave').click()};if(!first)$('profileCancel').onclick=closeModal}
-function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a A I</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x</span> teken wissen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">cw</span> woord wijzigen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
-function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
-function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
-$('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('overlay').classList.contains('visible')){e.preventDefault();e.stopPropagation();closeModal()}else if(e.key==='?'&&document.activeElement!==$('editor')&&!$('overlay').classList.contains('visible'))showHelp()});updateSidebar();updateMeta();loadLevel(Math.max(0,Math.min(LEVELS.length-1,data.unlocked-1)));if(!data.name)showProfile(true);
-</script></body></html>],text:'Spring naar het laatste teken van de huidige regel.'}],
+ [{keys:['0'],text:'Ga direct naar de eerste positie van de huidige regel.'},{keys:['$'],text:'Spring naar het laatste teken van de huidige regel.'}],
  [{keys:['gg'],text:'Spring naar de eerste regel van het bestand.'},{keys:['G'],text:'Spring naar de laatste regel van het bestand.'},{keys:['numberG'],text:'Typ eerst een regelnummer en dan hoofdletter G (Shift+G): 3G gaat naar regel 3, 5G naar regel 5.'}],
-  [{keys:["i"],text:"Voeg vóór de cursor tekst in."},{keys:["a"],text:"Voeg ná de cursor tekst in."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
-  [{keys:["I"],text:"Voeg tekst in aan het begin van de huidige regel, na inspringing."},{keys:["A"],text:"Voeg tekst toe aan het einde van de huidige regel."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
-  [{keys:["o"],text:"Open een nieuwe regel onder de huidige regel."},{keys:["O"],text:"Open een nieuwe regel boven de huidige regel."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
-  [{keys:["x"],text:"Verwijder het teken onder de cursor."},{keys:["X"],text:"Verwijder het teken vóór de cursor."}],
-  [{keys:["dw"],text:"Verwijder vanaf de cursor tot aan het begin van het volgende woord."},{keys:["de"],text:"Verwijder vanaf de cursor tot en met het einde van het woord."}],
-  [{keys:["dd"],text:"Verwijder de volledige huidige regel."},{keys:["D"],text:"Verwijder vanaf de cursor tot aan het einde van de regel."}],
-  [{keys:["r{char}"],text:"Vervang het teken onder de cursor door het volgende getypte teken."},{keys:["s"],text:"Verwijder één teken en begin meteen met typen in INSERT mode."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
-  [{keys:["cw"],text:"Vervang het woord vanaf de cursor."},{keys:["cc"],text:"Herschrijf de volledige regel."},{keys:["C"],text:"Herschrijf het deel van de huidige regel vanaf de cursor."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:["i"],text:"Voeg tekst in vóór de cursor."},{keys:["a"],text:"Voeg tekst in ná de cursor."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:["I"],text:"Begin te typen bij de eerste niet-lege positie van de regel."},{keys:["A"],text:"Begin te typen aan het einde van de regel."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:["o"],text:"Open een lege regel onder de huidige regel en start INSERT."},{keys:["O"],text:"Open een lege regel boven de huidige regel en start INSERT."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:["x"],text:"Verwijder het teken onder de cursor."},{keys:["X"],text:"Verwijder het teken links van de cursor."}],
+ [{keys:["dw"],text:"Verwijder tot het begin van het volgende woord."},{keys:["de"],text:"Verwijder tot en met het einde van het woord."}],
+ [{keys:["dd"],text:"Verwijder de hele huidige regel."},{keys:["D"],text:"Verwijder vanaf de cursor tot het einde van de regel."}],
+ [{keys:["r{teken}"],text:"Vervang het teken onder de cursor door het volgende teken."},{keys:["s"],text:"Verwijder één teken en start INSERT mode."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
+ [{keys:["cw"],text:"Wijzig het woord vanaf de cursor."},{keys:["cc"],text:"Herschrijf de hele huidige regel."},{keys:["C"],text:"Herschrijf vanaf de cursor tot aan het regeleinde."},{keys:["Esc"],text:"Keer terug naar NORMAL mode."}],
  [{keys:['y'],text:'Druk twee keer op y om de volledige regel te kopiëren (yy).'},{keys:['p'],text:'Plak de gekopieerde regel onder de cursor.'}],
  [{keys:['u'],text:'Maak de laatste wijziging ongedaan; je kunt dit vaker achter elkaar doen.'}],
  [{keys:['/'],text:'Open een zoekopdracht en typ daarna het gezochte woord.'},{keys:['Enter'],text:'Start de zoekopdracht en spring naar de match.'},{keys:['n'],text:'Spring naar de volgende match.'}],
  [{keys:['f'],text:'Typ f gevolgd door één doelteken, zoals f@, om ernaartoe te springen.'}],
- [{keys:['d'],text:'Druk twee keer op d om de ongewenste regel te verwijderen (dd).'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['
-let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
-function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
-function currentExercise(){return idx===1?null:currentRounds()[roundIndex]}
-function wordPosition(round,step){const r=WORD_ROUNDS[round],g=r.goals[step],index=g[0];let start=0;for(let i=0;i<index;i++)start+=r.words[i].length+1;return [0,start+(g[1]==='last'?r.words[index].length-1:0)]}
-function wordTaskText(){const r=WORD_ROUNDS[wordRound],g=r.goals[wordStep];return `${g[1]==='first'?'eerste':'laatste'} letter van <b>${r.words[g[0]]}</b>`}
-function updateWordUI(){
- const p=$('questProgress');p.style.display='block';
- if(idx===1){
-  const r=WORD_ROUNDS[wordRound];
-  p.innerHTML=`<b>RONDE ${wordRound+1}/${WORD_ROUNDS.length}</b><div class="dots">${r.goals.map((_,i)=>i<wordStep?'●':i===wordStep?'◉':'○').join(' ')}</div><b>VOLGENDE TARGET:</b> ${wordTaskText()}<div>${r.rule}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> Raak achtereenvolgens de aangeduide letters. '+wordTaskText()+'.';
- } else {
-  const ex=currentExercise();
-  p.innerHTML=`<b>RONDE ${roundIndex+1}/${currentRounds().length}</b><div style="margin-top:5px">${ex.goal}</div>`;
-  $('goal').innerHTML='<b>OBJECTIVE //</b> '+ex.goal;
- }
-}
-function prepareRound(r){
- roundIndex=r;const ex=currentExercise();lines=[...ex.lines];row=ex.start[0];col=ex.start[1];
- mode='normal';pending='';count='';command='';reg=null;undo=[];searchTerm='';searchMatch=null;lastMessage='';
- if(ex.setup==='deleteLast'){snapshot();lines[0]=lines[0].slice(0,-1);setCursor(0,0)}
- updateWordUI();render();
-}
-function setWordRound(r){wordRound=r;wordStep=0;lines=[WORD_ROUNDS[r].words.join(' ')];row=0;col=0;mode='normal';pending='';count='';searchMatch=null;updateWordUI();render()}
-let introStage='';
-function showLesson(){
- questReady=false;introStage='keys';
- const l=LEVELS[idx];
- const rows=LESSONS[idx].map(item=>`<div class="lesson-item"><div class="lesson-keys">${item.keys.map(key=>`<span class="lesson-key">${escapeHtml(key)}</span>`).join('')}</div><div class="lesson-text">${escapeHtml(item.text)}</div></div>`).join('');
- showModal(`<div class="intro-step">01 / 02 · LEER DE TOETSEN</div><div class="eyebrow" style="margin-top:12px">TRAINING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>Leer eerst de bewegingen en commando's die in deze quest handig zijn. Je hoeft niet alle mogelijkheden uit je hoofd te kennen: probeer ze straks uit.</p><div class="lesson-list">${rows}</div><div class="modalactions"><button class="btn primary" id="toQuest">GA NAAR QUEST →</button></div>`);
- $('toQuest').onclick=showQuestBriefing;
-}
-function showQuestBriefing(){
- introStage='quest';const l=LEVELS[idx];
- const special=idx===1?`<p>Deze quest bestaat uit <strong>4 rondes</strong> met elk <strong>4 checkpoints</strong>. Raak de letters in de juiste volgorde. Extra regels verschillen per ronde.</p>`:`<p>Deze quest bestaat uit <strong>${currentRounds().length} rondes</strong> met telkens een nieuwe opdracht. Je rondt het level pas af na alle rondes.</p>`;
- showModal(`<div class="intro-step">02 / 02 · JOUW MISSIE</div><div class="eyebrow" style="margin-top:12px">QUEST BRIEFING // LEVEL ${l.id}</div><h3>${escapeHtml(l.title)}</h3><p>${escapeHtml(l.desc)}</p><div class="quest-preview"><strong>OBJECTIVE //</strong><div>${l.goal}</div></div>${special}<p class="tiny">BESTAND: ${escapeHtml(l.file)} · START IN NORMAL MODE</p><div class="modalactions"><button class="btn" id="backToKeys">← TOETSEN</button><button class="btn primary" id="beginQuest">START QUEST →</button></div>`);
- $('backToKeys').onclick=showLesson;
- $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
-}
-const STORAGE='viquest.v1';const BOARD='viquest.board.v1';
-function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-let data=read(STORAGE,{name:'',unlocked:1,bests:{},completed:{}});let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
-const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
-const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
-function jumpToLine(number){const line=clamp(Math.trunc(number),1,lines.length);setCursor(line-1,0)}
-function nextWord(){let rr=row,cc=col+1;while(rr<lines.length){let s=lines[rr];if(cc>=s.length){rr++;cc=0;continue}while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}if(cc>0&&charClass(s[cc])===charClass(s[cc-1])&&charClass(s[cc])!=='space'){let t=charClass(s[cc]);while(cc<s.length&&charClass(s[cc])===t)cc++;while(cc<s.length&&charClass(s[cc])==='space')cc++;if(cc>=s.length){rr++;cc=0;continue}}setCursor(rr,cc);return}setCursor(lines.length-1,lines.at(-1).length);}
-function prevWord(){let rr=row,cc=col-1;while(rr>=0){let s=lines[rr];if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}while(cc>=0&&charClass(s[cc])==='space')cc--;if(cc<0){rr--;if(rr>=0)cc=lines[rr].length-1;continue}let t=charClass(s[cc]);while(cc>0&&charClass(s[cc-1])===t)cc--;setCursor(rr,cc);return}}
-function endWord(){let s=lines[row],c=col+1,r=row;while(r<lines.length){s=lines[r];while(c<s.length&&charClass(s[c])==='space')c++;if(c<s.length){let t=charClass(s[c]);while(c+1<s.length&&charClass(s[c+1])===t)c++;setCursor(r,c);return}r++;c=0}}
-function snapshot(){undo.push({lines:[...lines],row,col});if(undo.length>90)undo.shift()}
-function performUndo(){const x=undo.pop();if(x){lines=x.lines;mode='normal';setCursor(x.row,x.col);notice('Wijziging ongedaan gemaakt.')}else notice('Niets om ongedaan te maken.')}
-function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.length>1)lines.splice(row,1);else lines[0]='';setCursor(Math.min(row,lines.length-1),0)}
-function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
-function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
-function deleteChar(){if(col>=lines[row].length)return;snapshot();reg={type:'char',value:lines[row][col]};lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1);setCursor(row,col)}
-function substituteCommand(cmd){
- // Support :s/pattern/replacement/[g] on the current line and :%s/.../.../[g] on the entire buffer.
- const match=cmd.match(/^(%?)s\/([^/]*)\/([^/]*)(?:\/(g?)?)?$/);
- if(!match)return false;
- const [,all,pattern,replacement,globalFlag]=match;
- if(!pattern){notice('Substitutie vereist een zoekpatroon.');return true}
- let regex;
- try{regex=new RegExp(pattern,globalFlag==='g'?'g':'')}catch{notice('Ongeldig zoekpatroon: '+pattern);return true}
- let changes=0;const start=all?0:row,end=all?lines.length:row+1;
- const updated=[...lines];
- for(let i=start;i<end;i++){
-  let replaced=0;
-  updated[i]=lines[i].replace(regex,()=>{replaced++;return replacement});
-  changes+=replaced;
- }
- if(changes){snapshot();lines=updated;setCursor(row,col);searchMatch=null;notice(changes+' vervanging'+(changes===1?'':'en')+' uitgevoerd.');}
- else notice('Patroon niet gevonden: '+pattern);
- return true;
-}
-function findSearch(term,fromAfter=true){if(!term)return false;let startR=row,startC=col+(fromAfter?1:0);for(let d=0;d<lines.length;d++){const r=(startR+d)%lines.length;const c=lines[r].indexOf(term,d===0?startC:0);if(c>=0){setCursor(r,c);searchMatch=[r,c,term.length];return true}}if(fromAfter){for(let r=0;r<=row;r++){let c=lines[r].indexOf(term);if(c>=0&&(r!==row||c<=col)){setCursor(r,c);searchMatch=[r,c,term.length];return true}}}return false}
-function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=>{if(!finished){elapsed=Math.floor((Date.now()-started)/1000);$('timer').textContent=fmtTime(elapsed)}},250)}function fmtTime(t){return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
-function notice(s){lastMessage=s;$('notification').textContent=s}
-function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':count?('COUNT: '+count+' · wacht op beweging'):'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
-function levelComplete(){
- if(idx===1)return wordRound===WORD_ROUNDS.length-1&&wordStep===WORD_ROUNDS[wordRound].goals.length;
- const ex=currentExercise();
- if(ex.expected&&JSON.stringify(lines)!==JSON.stringify(ex.expected))return false;
- if(ex.target&&(row!==ex.target[0]||col!==ex.target[1]))return false;
- if(ex.requiredMode&&mode!==ex.requiredMode)return false;
- return !!(ex.expected||ex.target);
-}
-function evaluate(){
- if(!questReady||finished)return;
- if(idx===1){
-  if(wordStep<WORD_ROUNDS[wordRound].goals.length){const pos=wordPosition(wordRound,wordStep);
-   if(row===pos[0]&&col===pos[1]){wordStep++;
-    if(wordStep>=WORD_ROUNDS[wordRound].goals.length&&wordRound<WORD_ROUNDS.length-1){setWordRound(wordRound+1);notice('Ronde voltooid! Nieuwe tekst, nieuwe route.');render();return}
-    if(wordStep<WORD_ROUNDS[wordRound].goals.length){updateWordUI();notice('Checkpoint gehaald! Op naar de volgende letter.');render()}
-   }
-  }
- }else if(levelComplete()&&roundIndex<currentRounds().length-1){
-  prepareRound(roundIndex+1);notice('Ronde voltooid! Nieuwe opdracht.');render();return;
- }
- if(levelComplete()){
- finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
-function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
-function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
-if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){jumpToLine(count?Number(count):1);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
-if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
-switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':jumpToLine(count?Number(count):lines.length);break;case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}if(!pending)count=''}
-function inputKey(e){
- if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
- const k=(mode==='normal' && e.code==='KeyG' && e.shiftKey)?'G':e.key;
- // Modifier-only keydown events must not consume the pending Vim count.
- if(['Shift','Control','Alt','Meta','CapsLock','NumLock','Fn','FnLock'].includes(k))return;
- if(k==='Tab'||k==='Escape'||k==='Backspace'||k==='Delete'||k==='Enter'||k.startsWith('Arrow')||k===' '||k.length===1)e.preventDefault();
- if(e.ctrlKey||e.metaKey||e.altKey)return;
- if(!questReady)return;
- if(idx===1&&mode==='normal'&&WORD_ROUNDS[wordRound].forbidden.includes(k)){notice('Deze ronde is '+k+' niet toegestaan. Gebruik w, b of e.');render();return}
- if(k.startsWith('Arrow')){notice('Geen pijltjes! Gebruik h j k l.');return}
- if(k==='Tab')return;
- if(k==='Escape'){
-  // Prevent this same Escape event from dismissing the victory modal opened by evaluate().
-  e.stopPropagation();
-  if(mode==='insert'&&col>0)col--;
-  mode='normal';pending='';count='';command='';render();evaluate();if(idx===5&&!finished){notice('Huidige tekst: '+JSON.stringify(lines[0])+' · vereist: \"vimmage\" in NORMAL mode');render()}return;
- }
- if(!started)startTimer();
- if(finished)return;
- keys++;
- history.push(k==='Enter'?'↵':k==='Backspace'?'⌫':k==='Delete'?'⌦':k===' '?'␣':k);
- if(history.length>40)history.shift();
- lastMessage='';
- if(mode==='normal'){
-  if(k==='Delete')deleteChar();
-  else if(k!=='Backspace'&&k!=='Enter')handleNormal(k);
- }else if(mode==='insert'){
-  if(k==='Backspace'){
-   if(col>0){snapshot();lines[row]=lines[row].slice(0,col-1)+lines[row].slice(col);col--}
-   else if(row>0){snapshot();let len=lines[row-1].length;lines[row-1]+=lines[row];lines.splice(row,1);row--;col=len}
-  }else if(k==='Delete')deleteForward();
-  else if(k==='Enter'){
-   snapshot();let tail=lines[row].slice(col);lines[row]=lines[row].slice(0,col);lines.splice(row+1,0,tail);row++;col=0;
-  }else if(k.length===1)insertText(k);
- }else if(mode==='search'||mode==='command'){
-  if(k==='Enter'){
-   if(mode==='search'){searchTerm=command;if(!findSearch(searchTerm,false))notice('Niet gevonden: '+searchTerm)}
-   else if(command==='w'||command==='wq')notice('Bestand opgeslagen (simulatie).');
-   else if(command==='q')notice('Deze quest sluit je niet zomaar af ;)');
-   else if(!substituteCommand(command))notice('Onbekende opdracht: :'+command);
-   mode='normal';command='';
-  }else if(k==='Backspace')command=command.slice(0,-1);
-  else if(k==='Delete'){} // command cursor is always at the end
-  else if(k.length===1)command+=k;
- }
- render();evaluate();
- // Help identify visually subtle mismatches such as trailing spaces.
- if(idx===5&&!finished&&mode==='normal'&&lines.join('\n')!==currentExercise().expected.join('\n')){
-  notice('Nog niet exact: '+JSON.stringify(lines[0])+' · doel: '+JSON.stringify(currentExercise().expected[0]));render();
- }
-}
-function loadLevel(i){
- if(i+1>data.unlocked)return;
- clearInterval(clock);idx=i;const l=LEVELS[i];
- mode='normal';pending='';count='';command='';reg=null;undo=[];history=[];keys=0;hintCount=0;started=0;elapsed=0;finished=false;searchTerm='';searchMatch=null;lastMessage='';roundIndex=0;wordRound=0;wordStep=0;
- if(idx===1){lines=[WORD_ROUNDS[0].words.join(' ')];row=0;col=0}
- else prepareRound(0);
- $('stageLabel').textContent='TRIAL '+l.id+' / '+LEVELS.length+' · '+l.world;
- $('levelTitle').textContent=l.title;$('description').textContent=l.desc;$('filename').textContent=l.file;
- $('timer').textContent='00:00';$('notification').textContent='';
- updateSidebar();updateMeta();updateWordUI();render();showLesson();
-}function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
-function updateMeta(){$('playerLabel').textContent=(data.name||'GUEST').toUpperCase();$('totalScore').textContent=Object.values(data.bests).reduce((a,b)=>a+b,0).toLocaleString('nl-NL')+' XP';let done=Object.keys(data.completed).length;$('progressLabel').textContent=done+'/'+LEVELS.length;$('progressBar').style.width=(100*done/LEVELS.length)+'%';renderBoard()}
-function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="leader">'+board.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>LV ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
-function showModal(content){$('modal').innerHTML=content+'<div class="modal-esc-hint">Druk op <kbd>Esc</kbd> om te sluiten</div>';$('overlay').classList.add('visible')}function closeModal(){if(introStage){introStage='';questReady=true} $('overlay').classList.remove('visible');$('editor').focus()}
-function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">LOCAL PLAYER PROFILE</div><h3>${first?'Welkom bij Vi Quest':'Spelersprofiel'}</h3><p>${first?'Kies je warrior-naam om je voortgang en scores lokaal in deze browser te bewaren.':'Je voortgang wordt lokaal op dit apparaat bewaard. Een nieuw schermnaam verandert je toekomstige scores, niet je oude scores.'}</p><label class="tiny" for="nameInput">WARRIOR NAME</label><input id="nameInput" maxlength="20" placeholder="Bijv. NeoVimNinja" value="${escapeHtml(data.name)}" /><div class="modalactions">${first?'':'<button class="btn" id="profileCancel">ANNULEREN</button>'}<button class="btn primary" id="profileSave">${first?'START QUEST →':'OPSLAAN'}</button></div>`);$('nameInput').focus();$('nameInput').select();$('profileSave').onclick=()=>{data.name=$('nameInput').value.trim().slice(0,20)||'Guest';save();updateMeta();closeModal();if(first)showLesson()};$('nameInput').onkeydown=e=>{if(e.key==='Enter')$('profileSave').click()};if(!first)$('profileCancel').onclick=closeModal}
-function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a A I</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x</span> teken wissen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">cw</span> woord wijzigen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
-function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
-function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
-$('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('overlay').classList.contains('visible')){e.preventDefault();e.stopPropagation();closeModal()}else if(e.key==='?'&&document.activeElement!==$('editor')&&!$('overlay').classList.contains('visible'))showHelp()});updateSidebar();updateMeta();loadLevel(Math.max(0,Math.min(LEVELS.length-1,data.unlocked-1)));if(!data.name)showProfile(true);
-</script></body></html>],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
+ [{keys:['d'],text:'Druk twee keer op d om de ongewenste regel te verwijderen (dd).'},{keys:['G'],text:'Spring naar de laatste regel.'},{keys:['$'],text:'Spring naar het einde van de regel.'},{keys:['a'],text:'Voeg tekst toe na de cursor.'},{keys:['Esc'],text:'Eindig in NORMAL mode.'}]
 ];
 let wordRound=0,wordStep=0,roundIndex=0,questReady=true;
 function currentRounds(){return idx===1?WORD_ROUNDS:EXTRA_ROUNDS[LEVELS[idx].id]}
@@ -555,9 +203,9 @@ function showQuestBriefing(){
  $('backToKeys').onclick=showLesson;
  $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
 }
-const STORAGE='viquest.v1';const BOARD='viquest.board.v1';
+const STORAGE='viquest.v2';const BOARD='viquest.board.v1';
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-let data=read(STORAGE,{name:'',unlocked:1,bests:{},completed:{}});let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
+let data=read(STORAGE,null);if(!data){const prior=read('viquest.v1',null);data={name:prior?.name||'',unlocked:prior?.unlocked?Math.max(1,Math.min(17,({5:8,6:5,7:5,8:10,9:13,10:14,11:15,12:12,13:16,14:17}[prior.unlocked]||prior.unlocked))):1,bests:{},completed:{}};for(const id of ['01','02','03','04']){if(prior?.completed?.[id])data.completed[id]=true;if(prior?.bests?.[id])data.bests[id]=prior.bests[id]}}let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
 const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
 const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
 function jumpToLine(number){const line=clamp(Math.trunc(number),1,lines.length);setCursor(line-1,0)}
@@ -570,6 +218,21 @@ function removeLine(){snapshot();reg={type:'line',value:lines[row]};if(lines.len
 function insertText(t){snapshot();lines[row]=lines[row].slice(0,col)+t+lines[row].slice(col);col+=t.length}
 function deleteForward(){if(col>=lines[row].length){if(row<lines.length-1){snapshot();lines[row]+=lines[row+1];lines.splice(row+1,1)}return}snapshot();lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1)}
 function deleteChar(){if(col>=lines[row].length)return;snapshot();reg={type:'char',value:lines[row][col]};lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1);setCursor(row,col)}
+function deleteWord(toEnd){
+ const str=lines[row],start=col;
+ if(start>=str.length)return;
+ let end=start;
+ if(toEnd){
+  const cls=charClass(str[end]);
+  while(end<str.length&&charClass(str[end])===cls)end++;
+ }else{
+  const cls=charClass(str[end]);
+  while(end<str.length&&charClass(str[end])===cls)end++;
+  while(end<str.length&&charClass(str[end])==='space')end++;
+ }
+ if(end===start)return;
+ snapshot();lines[row]=str.slice(0,start)+str.slice(end);setCursor(row,start);
+}
 function substituteCommand(cmd){
  // Support :s/pattern/replacement/[g] on the current line and :%s/.../.../[g] on the entire buffer.
  const match=cmd.match(/^(%?)s\/([^/]*)\/([^/]*)(?:\/(g?)?)?$/);
@@ -617,9 +280,9 @@ function evaluate(){
  finished=true;clearInterval(clock);const time=elapsed,base=1000,efficiency=Math.min(300,Math.round(300*lOpt()/Math.max(keys,1))),speed=Math.max(0,240-Math.floor(time*4)),score=Math.max(100,base+efficiency+speed-hintCount*75);const l=LEVELS[idx];const prior=data.bests[l.id]||0;data.bests[l.id]=Math.max(prior,score);data.completed[l.id]=true;data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));const total=Object.values(data.bests).reduce((a,b)=>a+b,0);board.push({name:data.name||'Guest',level:l.id,score,at:new Date().toISOString()});board.sort((a,b)=>b.score-a.score);board=board.slice(0,120);save();updateSidebar();updateMeta();showModal(`<div class="eyebrow">MISSION COMPLETE // ${l.id}</div><h3>LEVEL CLEARED <span style="color:var(--lime)">✓</span></h3><p>Goed gespeeld! ${score>=prior?'Nieuwe persoonlijke recordscore.':'Je beste score blijft bewaard.'} Je kunt het level opnieuw proberen voor meer XP.</p><div class="successrow"><div><b>+${score}</b><span>XP DEZE RUN</span></div><div><b>${fmtTime(time)}</b><span>TIJD</span></div><div><b>${keys}</b><span>TOETSEN</span></div></div><p>Beste levelscore: <strong style="color:var(--lime)">${data.bests[l.id]} XP</strong> · Totale XP: <strong>${total}</strong></p><div class="modalactions"><button class="btn" onclick="closeModal();loadLevel(${idx})">OPNIEUW</button><button class="btn primary" id="nextLevel">${idx===LEVELS.length-1?'AFRONDEN':'VOLGEND LEVEL →'}</button></div>`);$('nextLevel').onclick=()=>{closeModal();if(idx<LEVELS.length-1)loadLevel(idx+1);else showFinal()}}}
 function lOpt(){return LEVELS[idx].optimal*currentRounds().length}
 function handleNormal(k){let n=Number(count)||1;const move=(fn)=>{for(let i=0;i<Math.min(n,100);i++)fn();count=''};
-if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){jumpToLine(count?Number(count):1);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
+if(pending){let p=pending;pending='';if(p==='g'&&k==='g'){jumpToLine(count?Number(count):1);count='';return}if(p==='d'&&k==='d'){removeLine();count='';return}if(p==='d'&&k==='w'){deleteWord(false);count='';return}if(p==='d'&&k==='e'){deleteWord(true);count='';return}if(p==='c'&&k==='c'){snapshot();lines[row]='';setCursor(row,0);mode='insert';count='';return}if(p==='r'&&k.length===1){snapshot();if(col<lines[row].length)lines[row]=lines[row].slice(0,col)+k+lines[row].slice(col+1);count='';return}if(p==='y'&&k==='y'){reg={type:'line',value:lines[row]};notice('Regel gekopieerd.');count='';return}if(p==='c'&&k==='w'){snapshot();let old=lines[row],a=col,b=a;while(b<old.length&&charClass(old[b])!=='space')b++;lines[row]=old.slice(0,a)+old.slice(b);mode='insert';count='';return}if(p==='f'){let at=lines[row].indexOf(k,col+1);if(at>=0)setCursor(row,at);else notice('Teken niet gevonden.');count='';return}notice('Onbekende combinatie: '+p+k);count='';return}
 if(/^[1-9]$/.test(k)||(/^[0-9]$/.test(k)&&count)){count+=k;return}
-switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':jumpToLine(count?Number(count):lines.length);break;case'g':case'd':case'y':case'c':case'f':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}if(!pending)count=''}
+switch(k){case'h':move(()=>setCursor(row,col-1));break;case'j':move(()=>setCursor(row+1,col));break;case'k':move(()=>setCursor(row-1,col));break;case'l':move(()=>setCursor(row,col+1));break;case'w':move(nextWord);break;case'b':move(prevWord);break;case'e':move(endWord);break;case'0':setCursor(row,0);break;case'$':setCursor(row,lines[row].length-1);break;case'G':jumpToLine(count?Number(count):lines.length);break;case'g':case'd':case'y':case'c':case'f':case'r':pending=k;break;case'i':mode='insert';break;case'a':col=Math.min(col+1,lines[row].length);mode='insert';break;case'A':col=lines[row].length;mode='insert';break;case'I':col=lines[row].search(/\S|$/);mode='insert';break;case'x':deleteChar();break;case'X':if(col>0){setCursor(row,col-1);deleteChar()}break;case'D':snapshot();lines[row]=lines[row].slice(0,col);setCursor(row,col);break;case's':snapshot();if(col<lines[row].length)lines[row]=lines[row].slice(0,col)+lines[row].slice(col+1);mode='insert';break;case'C':snapshot();lines[row]=lines[row].slice(0,col);mode='insert';break;case'u':performUndo();break;case'p':if(reg){snapshot();if(reg.type==='line'){lines.splice(row+1,0,reg.value);setCursor(row+1,0)}else {let at=Math.min(col+1,lines[row].length);lines[row]=lines[row].slice(0,at)+reg.value+lines[row].slice(at);setCursor(row,at)}}break;case'/':mode='search';command='';break;case':':mode='command';command='';break;case'n':if(searchTerm&&!findSearch(searchTerm))notice('Geen volgende match.');break;case'o':snapshot();lines.splice(row+1,0,'');setCursor(row+1,0);mode='insert';break;case'O':snapshot();lines.splice(row,0,'');setCursor(row,0);mode='insert';break;default:if(k.length===1)notice('Niet ondersteunde toets in NORMAL mode: '+k)}if(!pending)count=''}
 function inputKey(e){
  if($('overlay').classList.contains('visible')||document.activeElement!==$('editor'))return;
  const k=(mode==='normal' && e.code==='KeyG' && e.shiftKey)?'G':e.key;
@@ -687,7 +350,7 @@ function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="le
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
 function showModal(content){$('modal').innerHTML=content+'<div class="modal-esc-hint">Druk op <kbd>Esc</kbd> om te sluiten</div>';$('overlay').classList.add('visible')}function closeModal(){if(introStage){introStage='';questReady=true} $('overlay').classList.remove('visible');$('editor').focus()}
 function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">LOCAL PLAYER PROFILE</div><h3>${first?'Welkom bij Vi Quest':'Spelersprofiel'}</h3><p>${first?'Kies je warrior-naam om je voortgang en scores lokaal in deze browser te bewaren.':'Je voortgang wordt lokaal op dit apparaat bewaard. Een nieuw schermnaam verandert je toekomstige scores, niet je oude scores.'}</p><label class="tiny" for="nameInput">WARRIOR NAME</label><input id="nameInput" maxlength="20" placeholder="Bijv. NeoVimNinja" value="${escapeHtml(data.name)}" /><div class="modalactions">${first?'':'<button class="btn" id="profileCancel">ANNULEREN</button>'}<button class="btn primary" id="profileSave">${first?'START QUEST →':'OPSLAAN'}</button></div>`);$('nameInput').focus();$('nameInput').select();$('profileSave').onclick=()=>{data.name=$('nameInput').value.trim().slice(0,20)||'Guest';save();updateMeta();closeModal();if(first)showLesson()};$('nameInput').onkeydown=e=>{if(e.key==='Enter')$('profileSave').click()};if(!first)$('profileCancel').onclick=closeModal}
-function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a A I</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x</span> teken wissen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">cw</span> woord wijzigen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
+function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a I A o O</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw de dd D</span> verwijderen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">r s cw cc C</span> veranderen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
 function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
 function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
 $('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('overlay').classList.contains('visible')){e.preventDefault();e.stopPropagation();closeModal()}else if(e.key==='?'&&document.activeElement!==$('editor')&&!$('overlay').classList.contains('visible'))showHelp()});updateSidebar();updateMeta();loadLevel(Math.max(0,Math.min(LEVELS.length-1,data.unlocked-1)));if(!data.name)showProfile(true);
