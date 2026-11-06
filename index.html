@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.10.1'; // Update bij iedere release; deze waarde voedt de header.
+const APP_VERSION = '1.10.2'; // Update bij iedere release; deze waarde voedt de header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -563,9 +563,16 @@ function showQuestBriefing(){
  $('backToKeys').onclick=showLesson;
  $('beginQuest').onclick=()=>{introStage='';questReady=true;closeModal()};
 }
-const STORAGE='viquest.v4';const BOARD='viquest.board.v3';
+const STORAGE='viquest.v4';const BOARD='viquest.board.v4';const XP_SCHEMA='viquest.xp.v2';
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
 let data=read(STORAGE,null);if(!data){const prior=read('viquest.v3',null)||read('viquest.v2',null)||read('viquest.v1',null);data={name:prior?.name||'',unlocked:1,bests:{},completed:{}}}
+// Old XP records are incompatible with the rebalanced system. Preserve unlocks and completed quests.
+if(!read(XP_SCHEMA,false)){
+ data.bests={};
+ localStorage.setItem(XP_SCHEMA,JSON.stringify(true));
+ localStorage.removeItem('viquest.board.v3');
+ localStorage.setItem(STORAGE,JSON.stringify(data));
+}
 let board=read(BOARD,[]);let idx=0,lines=[],row=0,col=0,mode='normal',pending='',count='',command='',reg=null,undo=[],redo=[],history=[],keys=0,hintCount=0,started=0,elapsed=0,clock=null,finished=false,lastMessage='',searchTerm='',searchMatch=null;
 const $=id=>document.getElementById(id);const save=()=>{localStorage.setItem(STORAGE,JSON.stringify(data));localStorage.setItem(BOARD,JSON.stringify(board))};
 const charClass=c=>!c?'none':/\w/.test(c)?'word':/\s/.test(c)?'space':'punct';const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const maxCol=()=>mode==='insert'?lines[row].length:Math.max(0,lines[row].length-1);const setCursor=(r,c)=>{row=clamp(r,0,lines.length-1);col=clamp(c,0,maxCol())};
@@ -618,10 +625,9 @@ function startTimer(){if(started)return;started=Date.now();clock=setInterval(()=
 function notice(s){lastMessage=s;$('notification').textContent=s}
 function render(){const ed=$('editor');ed.innerHTML='';for(let r=0;r<lines.length;r++){let d=document.createElement('div');d.className='line'+(r===row?' current':'');let g=document.createElement('span');g.className='gutter';g.textContent=r+1;let c=document.createElement('span');c.className='content';let str=lines[r];const cursorHere=r===row;for(let i=0;i<Math.max(str.length,cursorHere?col+1:0);i++){let ch=str[i]||' ';let s=document.createElement('span');s.textContent=ch;if(cursorHere&&i===col)s.className='cursor'+(mode==='insert'?' insert':'');else if(searchMatch&&r===searchMatch[0]&&i>=searchMatch[1]&&i<searchMatch[1]+searchMatch[2])s.className='search-hit';c.appendChild(s)}if(!str.length&&!cursorHere)c.textContent=' ';d.append(g,c);ed.appendChild(d)}$('modeLabel').textContent=mode.toUpperCase();$('modeLabel').className='mode'+(mode==='insert'?' insertmode':mode==='command'||mode==='search'?' commandmode':'');$('cmdline').textContent=mode==='command'?':'+command:mode==='search'?'/'+command:pending?('OPERATOR: '+pending+(count||'')):mode==='insert'?'-- INSERT --':count?('COUNT: '+count+' · wacht op beweging'):'NORMAL MODE · '+(lastMessage||'ready');$('cursorpos').textContent=(row+1)+':'+(col+1);$('keystrokes').textContent=keys;$('hints').textContent=hintCount;$('recent').innerHTML='';history.slice(-11).forEach(v=>{let k=document.createElement('span');k.className='key';k.textContent=v;$('recent').appendChild(k)});}
 
-// v1.10 scoring: deterministic conservative benchmarks, not forced keystroke scripts.
-// Each round gets an equal portion of 1000 base, 300 efficiency and 200 clean XP.
-const SCORE_MAX=1500;
-const SCORE_RANKS=[['S','Legend',1400],['A','Master',1250],['B','Warrior',1100],['C','Apprentice',900],['D','Novice',0]];
+// v1.10.2: 500 XP maximum per quest; benchmark-based, solution-agnostic scoring.
+const SCORE_MAX=500;
+const SCORE_RANKS=[['S','Legend',475],['A','Master',425],['B','Warrior',350],['C','Apprentice',250],['D','Novice',0]];
 function questRank(score){return SCORE_RANKS.find(rank=>score>=rank[2])}
 function referenceQuestKeys(ex){
  if(Number.isInteger(ex.referenceKeys)&&ex.referenceKeys>0)return ex.referenceKeys;
@@ -654,11 +660,11 @@ function referenceQuestKeys(ex){
  return Math.max(2,characters+changes*2+navigation+Math.abs(after.length-before.length)*2);
 }
 function scoreQuestRound(ex,used,hints,corrected,totalRounds){
- const n=Math.max(1,totalRounds),base=1000/n;
+ const n=Math.max(1,totalRounds),base=100/n;
  const benchmark=referenceQuestKeys(ex);
- const efficiency=300/n*Math.min(1,benchmark/Math.max(1,used));
- const clean=hints>0?0:corrected?100/n:200/n;
- const penalty=100*hints;
+ const efficiency=Math.max(0,300/n-12*Math.max(0,used-benchmark));
+ const clean=corrected?50/n:100/n;
+ const penalty=75*hints;
  return {base,efficiency,clean,penalty,benchmark,used,hints,corrected,
   total:Math.max(0,base+efficiency+clean-penalty)};
 }
@@ -666,7 +672,7 @@ function scoreQuestRun(scores){
  const sum=(field)=>scores.reduce((n,x)=>n+x[field],0);
  const base=Math.round(sum('base')),efficiency=Math.round(sum('efficiency')),
   clean=Math.round(sum('clean')),penalty=sum('penalty');
- const score=Math.max(0,Math.round(scores.reduce((n,x)=>n+x.total,0)));
+ const score=Math.max(25,Math.min(SCORE_MAX,Math.round(scores.reduce((n,x)=>n+x.total,0))));
  return {base,efficiency,clean,penalty,score,rank:questRank(score),rounds:scores};
 }
 function markQuestCorrection(){
@@ -704,7 +710,7 @@ function evaluate(){
  data.unlocked=Math.max(data.unlocked,Math.min(LEVELS.length,idx+2));
  const total=Object.values(data.bests).reduce((a,b)=>a+b,0);
  if(score>prior){
-  board=board.filter(entry=>entry.level!==l.id);
+  board=board.filter(entry=>!(entry.level===l.id&&entry.name===(data.name||'Guest')));
   board.push({name:data.name||'Guest',level:l.id,score,rank:rank[0],at:new Date().toISOString()});
   board.sort((a,b)=>b.score-a.score);
  }
@@ -793,7 +799,17 @@ function loadLevel(i){
  updateSidebar();updateMeta();updateWordUI();render();showLesson();
 }function updateSidebar(){let html='',world='';LEVELS.forEach((l,i)=>{if(l.world!==world){world=l.world;html+=`<div class="world">${world}</div>`}let locked=!TEST_ALL_LEVELS&&i+1>data.unlocked;html+=`<button class="levelitem ${idx===i?'active':''} ${locked?'locked':''}" data-i="${i}" ${locked?'disabled':''}><span class="levelnum">${l.id}</span><span class="leveltext">${l.name}</span><span class="levelicon">${data.completed[l.id]?'✓':locked?'🔒':idx===i?'▸':'·'}</span></button>`});$('levelList').innerHTML=html;$('levelList').querySelectorAll('button:not([disabled])').forEach(b=>b.onclick=()=>loadLevel(Number(b.dataset.i)))}
 function updateMeta(){$('playerLabel').textContent=(data.name||'GUEST').toUpperCase();$('totalScore').textContent=Object.values(data.bests).reduce((a,b)=>a+b,0).toLocaleString('nl-NL')+' XP';let done=Object.keys(data.completed).length;$('progressLabel').textContent=done+'/'+LEVELS.length;$('progressBar').style.width=(100*done/LEVELS.length)+'%';renderBoard()}
-function renderBoard(){$('leaderboard').innerHTML=board.length?'<table class="leader">'+board.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>LV ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
+function totalBoard(){
+ const perPlayer=new Map();
+ for(const entry of board){
+  const name=entry.name||'Guest',key=String(entry.level);
+  if(!perPlayer.has(name))perPlayer.set(name,new Map());
+  const levels=perPlayer.get(name);
+  levels.set(key,Math.max(levels.get(key)||0,entry.score||0));
+ }
+ return [...perPlayer].map(([name,levels])=>({name,levels:levels.size,score:[...levels.values()].reduce((a,b)=>a+b,0)})).sort((a,b)=>b.score-a.score||b.levels-a.levels);
+}
+function renderBoard(){const ranks=totalBoard();$('leaderboard').innerHTML=ranks.length?'<table class="leader">'+ranks.slice(0,5).map((b,i)=>`<tr><td>${i+1}. ${escapeHtml(b.name)}</td><td>${b.levels} LV</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Nog geen scores. Voltooi je eerste level om het scorebord te vullen.</p>'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
 function showModal(content){$('modal').innerHTML=content+'<div class="modal-esc-hint">Druk op <kbd>Enter</kbd> voor de groene knop · <kbd>Esc</kbd> om te sluiten</div>';$('overlay').classList.add('visible')}function closeModal(){if(introStage){introStage='';questReady=true} $('overlay').classList.remove('visible');$('editor').focus()}
 function showProfile(first=false){introStage='';showModal(`<div class="eyebrow">LOCAL PLAYER PROFILE</div><h3>${first?'Welkom bij Vi Quest':'Spelersprofiel'}</h3><p>${first?'Kies je warrior-naam om je voortgang en scores lokaal in deze browser te bewaren.':'Je voortgang wordt lokaal op dit apparaat bewaard. Een nieuw schermnaam verandert je toekomstige scores, niet je oude scores.'}</p><label class="tiny" for="nameInput">WARRIOR NAME</label><input id="nameInput" maxlength="20" placeholder="Bijv. NeoVimNinja" value="${escapeHtml(data.name)}" /><div class="modalactions">${first?'':'<button class="btn" id="profileCancel">ANNULEREN</button>'}<button class="btn primary" id="profileSave">${first?'START QUEST →':'OPSLAAN'}</button></div>`);$('nameInput').focus();$('nameInput').select();$('profileSave').onclick=()=>{data.name=$('nameInput').value.trim().slice(0,20)||'Guest';save();updateMeta();closeModal();if(first)showLesson()};if(!first)$('profileCancel').onclick=closeModal}
@@ -812,8 +828,8 @@ function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginne
 
 }
 
-function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a I A o O</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw de dd D</span> verwijderen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">r s cw cc C</span> veranderen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 240 voor snelheid, min 75 per hint. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
-function showBoard(){introStage='';let sorted=[...board].sort((a,b)=>b.score-a.score);showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De beste individuele runs op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>Level ${b.level}</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:2,scoringVersion:'1.10',exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
+function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>De commandogrimoire</h3><p>Dit is een oefensimulator voor de belangrijkste Vim-toetsen. Je gebruikt hem volledig met het toetsenbord. Klik op de editor of sluit dit venster om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> bewegen</div><div><span class="key">w b e</span> woorden</div><div><span class="key">0 $</span> regelranden</div><div><span class="key">gg G</span> bestand</div><div><span class="key">i a I A o O</span> invoegen</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw de dd D</span> verwijderen</div><div><span class="key">dd</span> regel wissen</div><div><span class="key">yy p</span> kopiëren/plakken</div><div><span class="key">u</span> undo</div><div><span class="key">/woord ↵</span> zoeken</div><div><span class="key">n</span> volgende match</div><div><span class="key">r s cw cc C</span> veranderen</div><div><span class="key">:%s/a/b/ ↵</span> vervangen in bestand</div><div><span class="key">fX</span> teken vinden</div></div><p>Scoring: 1000 basis-XP + maximaal 300 voor efficiëntie + maximaal 100 voor een schone run, min 75 per hint. Extra toetsen boven de referentie kosten 12 XP per toets. Per level telt je beste score mee voor je totale XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
+function showBoard(){introStage='';let sorted=totalBoard();showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>De hoogste totale XP per speler op dit apparaat. Geen account, geen cloud, geen gedeelde scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>${b.levels} levels</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">Er zijn nog geen scores.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">SLUITEN</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:2,scoringVersion:'1.10.2',exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
 function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>Alle ${LEVELS.length} levels voltooid. Jouw score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Herhaal levels om je efficiëntie en topscore te verbeteren. Volgende update: accounts en het wereldwijde leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">TERUG NAAR DE QUEST</button></div>`);$('finalClose').onclick=closeModal}
 $('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('generatorBtn').onclick=()=>showGeneratorLab('demo-001');$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;roundHints++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});// Keyboard-first dialogs: Enter activates exactly the visible green primary action.
 // Capture the event before focused inputs/buttons handle it, to avoid double actions.
