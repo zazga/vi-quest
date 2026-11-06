@@ -190,12 +190,12 @@ function generateEditingRound(kind,seed,round){
  [[a+' '+b,c+' '+d],[a+' '+b,c+' '+e+' '+d],'Insert '+e+' followed by one space before '+d+' on line 2.','i'],
  [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+' '+e],'Insert a space and '+e+' after '+d+' on line 2.','a'],
  [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+d,e+' '+g+' '+f],'Insert '+g+' followed by one space before '+f+' on line 3.','i'],
- [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+g+' '+d,e+' '+f+' '+h],'Insert '+g+' followed by one space before '+d+' on line 2, and one spatie followed by '+h+' after '+f+' on line 3.','combine']
+ [[a+' '+b,c+' '+d,e+' '+f],[a+' '+b,c+' '+g+' '+d,e+' '+f+' '+h],'Insert '+g+' followed by one space before '+d+' on line 2, and one space followed by '+h+' after '+f+' on line 3.','combine']
  ],
  'line-insert':[
- [[a+' '+b,'  '+c+' '+d],[a+' '+b,'  '+e+' '+c+' '+d],'Insert '+e+' followed by one space before '+c+' on line 2. Keep the twee beginspaties.','I'],
+ [[a+' '+b,'  '+c+' '+d],[a+' '+b,'  '+e+' '+c+' '+d],'Insert '+e+' followed by one space before '+c+' on line 2. Keep the two leading spaces.','I'],
  [[a+' '+b,c+' '+d],[a+' '+b,c+' '+d+'!'],'Insert ! at the end of line 2.','A'],
- [[a+' '+b,c+' '+d,'    '+e+' '+f],[a+' '+b,c+' '+d,'    '+g+' '+e+' '+f],'Insert '+g+' followed by one space before '+e+' on line 3. Keep the vier beginspaties.','I'],
+ [[a+' '+b,c+' '+d,'    '+e+' '+f],[a+' '+b,c+' '+d,'    '+g+' '+e+' '+f],'Insert '+g+' followed by one space before '+e+' on line 3. Keep the four leading spaces.','I'],
  [[a+' '+b,'  '+c+' '+d,e+' '+f],[a+' '+b,'  '+g+' '+c+' '+d,e+' '+f+'!'],'Insert '+g+' followed by one space before '+c+' on line 2 and ! at the end of line 3.','combine']
  ],
  'open-lines':[
@@ -462,15 +462,15 @@ const EXTRA_ROUNDS={
     {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on line <b>5</b>.'}
   ],
   '05':[
-    {lines:["an old map","de draak is groot"],start:[0,0],expected:["an old map","the blue dragon is large"],requiredMode:'normal',goal:"Insert <b>blauwe </b> before <b>draak</b> on line 2."},
+    {lines:["an old map","the dragon is large"],start:[0,0],expected:["an old map","the blue dragon is large"],requiredMode:'normal',goal:"Insert <b>blue </b> before <b>dragon</b> on line 2."},
     {lines:["the road is long","a cat sleeps"],start:[0,0],expected:["the road is long","a kitten sleeps"],requiredMode:'normal',goal:"Insert <b>je</b> after <b>kat</b> on line 2."},
     {lines:["an open door","the tall tower"],start:[0,0],expected:["an open door","the very tall tower"],requiredMode:'normal',goal:"Insert <b>zeer </b> before <b>grote</b> on line 2."},
     {lines:["the first step","a hero walks"],start:[0,0],expected:["the first step","a hero walks snel"],requiredMode:'normal',goal:"Insert <b> snel</b> after <b>loopt</b> on line 2."}
   ],
   '07':[
-    {lines:["a silent night","  moon shines"],start:[0,0],expected:["a silent night","  the maan schijnt"],requiredMode:'normal',goal:"Insert <b>de </b> before <b>maan</b> on line 2. Keep the twee beginspaties."},
-    {lines:["a long journey","de held loopt"],start:[0,0],expected:["a long journey","de held loopt!"],requiredMode:'normal',goal:"Insert <b>!</b> at the end of line 2."},
-    {lines:["the big book","    story begins"],start:[0,0],expected:["the big book","    the verhaal begint"],requiredMode:'normal',goal:"Insert <b>het </b> before <b>verhaal</b> on line 2. Keep the vier beginspaties."},
+    {lines:["a silent night","  moon shines"],start:[0,0],expected:["a silent night","  the moon shines"],requiredMode:'normal',goal:"Insert <b>the </b> before <b>moon</b> on line 2. Keep the two leading spaces."},
+    {lines:["a long journey","the hero walks"],start:[0,0],expected:["a long journey","the hero walks!"],requiredMode:'normal',goal:"Insert <b>!</b> at the end of line 2."},
+    {lines:["the big book","    story begins"],start:[0,0],expected:["the big book","    the story begins"],requiredMode:'normal',goal:"Insert <b>the </b> before <b>story</b> on line 2. Keep the four leading spaces."},
     {lines:["the first light","the day begins","a bird sings"],start:[0,0],expected:["the first light","the day begins","a bird sings."],requiredMode:'normal',goal:"Insert <b>.</b> at the end of line 3."}
   ],
   '08':[
@@ -480,15 +480,15 @@ const EXTRA_ROUNDS={
     {lines:["the castle","the gate closes"],start:[0,0],expected:["the castle","the gate opens","the gate closes"],requiredMode:'normal',goal:"Insert a new line <b>the gate opens</b> above <b>the gate closes</b>."}
   ],
   '09':[
-    {lines:["de wind waait","de draakk vliegt"],start:[0,0],expected:["de wind waait","de draak vliegt"],requiredMode:'normal',goal:"Delete one extra <b>k</b> uit <b>draakk</b> on line 2."},
-    {lines:["the forest lives","a starr shines"],start:[0,0],expected:["the forest lives","a star shines"],requiredMode:'normal',goal:"Delete one extra <b>r</b> uit <b>sterr</b> on line 2."},
-    {lines:["the map lies","the swordd shines"],start:[0,0],expected:["the map lies","the sword shines"],requiredMode:'normal',goal:"Delete one extra <b>d</b> uit <b>zwaardd</b> on line 2."},
-    {lines:["the hero rests","a flowerr grows"],start:[0,0],expected:["the hero rests","a flower grows"],requiredMode:'normal',goal:"Delete one extra <b>m</b> uit <b>bloemm</b> on line 2."}
+    {lines:["the wind blows","the dragonn flies"],start:[0,0],expected:["the wind blows","the dragon flies"],requiredMode:'normal',goal:"Delete one extra <b>k</b> from <b>dragonn</b> on line 2."},
+    {lines:["the forest lives","a starr shines"],start:[0,0],expected:["the forest lives","a star shines"],requiredMode:'normal',goal:"Delete one extra <b>r</b> from <b>sterr</b> on line 2."},
+    {lines:["the map lies","the swordd shines"],start:[0,0],expected:["the map lies","the sword shines"],requiredMode:'normal',goal:"Delete one extra <b>d</b> from <b>zwaardd</b> on line 2."},
+    {lines:["the hero rests","a flowerr grows"],start:[0,0],expected:["the hero rests","a flower grows"],requiredMode:'normal',goal:"Delete one extra <b>m</b> from <b>bloemm</b> on line 2."}
   ],
   '10':[
     {lines:["the small dragon slaapt"],start:[0,0],expected:["the dragon sleeps"],requiredMode:'normal',goal:"Delete <b>kleine </b> from line 1."},
     {lines:["a fireBUG!"],start:[0,0],expected:["a fire!"],requiredMode:'normal',goal:"Delete <b>BUG</b> from line 1, maar keep <b>!</b>."},
-    {lines:["de held draagt a zware tas"],start:[0,0],expected:["de held draagt a tas"],requiredMode:'normal',goal:"Delete <b>zware </b> from line 1."},
+    {lines:["the hero carries a heavy bag"],start:[0,0],expected:["the hero carries a bag"],requiredMode:'normal',goal:"Delete <b>heavy </b> from line 1."},
     {lines:["the treasureFAKE!"],start:[0,0],expected:["the treasure!"],requiredMode:'normal',goal:"Delete <b>FAKE</b> from line 1, maar keep <b>!</b>."}
   ]
 };
