@@ -270,7 +270,7 @@ function generateUtilityRound(kind,seed,round){
   ];
   [lines,expected,goal,focus]=cases[round];
  }else if(kind==='undo'){
-  if(round===0){expected=[a+' '+b,c+' '+d];lines=[a+b,c+' '+d];goal='Restore the last deleted spatie between '+a+' and '+b+' on line 1.';focus='u';setup={undoStates:[[...expected]]};}
+  if(round===0){expected=[a+' '+b,c+' '+d];lines=[a+b,c+' '+d];goal='Restore the last deleted space between '+a+' and '+b+' on line 1.';focus='u';setup={undoStates:[[...expected]]};}
   else if(round===1){lines=[a,b];expected=[a,b,c];goal='Restore the earlier undone toevoeging: zet '+c+' back as line 3.';focus='Ctrl+r';setup={redoStates:[[...expected]]};}
   else throw Error('Undo has two basic rounds');
  }else throw Error('Unknown utility generator: '+kind);
@@ -352,7 +352,7 @@ function generateNavigationRound(kind,seed,round){
   if(round===0){lines=[a,b,c];expected=[a,c];goal='Delete the entire line 2 ('+b+').';focus='dd'}
   else if(round===1){lines=[a+' '+b,c+'#'+d,e+' '+f];expected=[a+' '+b,c+d,e+' '+f];goal='Delete the character # between '+c+' and '+d+' on line 2.';focus='x'}
   else if(round===2){lines=[a,b+' '+c,d];expected=[a,b+' '+c,e,d];goal='Insert a new line with only '+e+' directly below line 2.';focus='o'}
-  else{lines=[a+' '+b,c,d+'#'+e,f+' '+g];expected=[a+' '+b,d+e,f+' '+g+' '+h];goal='Delete the entire line 2 ('+c+'), verwijder the # between '+d+' and '+e+' on the new line 2, and insert exactly one spatie followed by '+h+' at the end of the last line.';focus='prove'}
+  else{lines=[a+' '+b,c,d+'#'+e,f+' '+g];expected=[a+' '+b,d+e,f+' '+g+' '+h];goal='Delete the entire line 2 ('+c+'), delete # between '+d+' and '+e+' on the new line 2, and insert exactly one space followed by '+h+' at the end of the last line.';focus='prove'}
  }else throw Error('Unknown navigation generator '+kind);
  if(!expected)expected=[...lines];
  const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='final-boss'?'mastery':'movement',difficulty:phase.difficulty,round,roundType:phase.id,lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind}};
@@ -396,28 +396,28 @@ const LEVELS=[
 // Four increasingly varied exercises per level. Level 02 retains its checkpoint course.
 const EXTRA_ROUNDS={
   '11':[
-    {lines:["bewaar deze regel","VERWIJDER DEZE REGEL","en bewaar deze ook"],start:[0,0],expected:["bewaar deze regel","en bewaar deze ook"],requiredMode:'normal',goal:"Delete the entire line <b>VERWIJDER DEZE REGEL</b>."},
-    {lines:["het kasteel staat VERWIJDER DIT"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Delete <b> VERWIJDER DIT</b> from line 1."},
-    {lines:["DIT MAG WEG","de reis begint"],start:[0,0],expected:["de reis begint"],requiredMode:'normal',goal:"Delete the entire first line <b>DIT MAG WEG</b>."},
-    {lines:["de maan schijnt EXTRA TEKST"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Delete <b> EXTRA TEKST</b> from line 1."}
+    {lines:["keep this line","DELETE THIS LINE","and keep this one too"],start:[0,0],expected:["keep this line","and keep this one too"],requiredMode:'normal',goal:"Delete the entire line <b>DELETE THIS LINE</b>."},
+    {lines:["the castle stands DELETE THIS"],start:[0,0],expected:["the castle stands"],requiredMode:'normal',goal:"Delete <b> DELETE THIS</b> from line 1."},
+    {lines:["DELETE THIS","the journey begins"],start:[0,0],expected:["the journey begins"],requiredMode:'normal',goal:"Delete the entire first line <b>DELETE THIS</b>."},
+    {lines:["the moon shines EXTRA TEXT"],start:[0,0],expected:["the moon shines"],requiredMode:'normal',goal:"Delete <b> EXTRA TEXT</b> from line 1."}
   ],
   '12':[
-    {lines:["de kxt loopt"],start:[0,0],expected:["de kat loopt"],requiredMode:'normal',goal:"Replace the <b>x</b> in <b>kxt</b> with <b>a</b>."},
-    {lines:["de grote b0om"],start:[0,0],expected:["de grote boom"],requiredMode:'normal',goal:"Replace the <b>0</b> in <b>b0om</b> with <b>o</b>."},
-    {lines:["de mXan schijnt"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Replace the <b>X</b> in <b>mXan</b> with <b>a</b>."},
-    {lines:["het gr0ene bos"],start:[0,0],expected:["het groene bos"],requiredMode:'normal',goal:"Replace the <b>0</b> in <b>gr0ene</b> with <b>o</b>."}
+    {lines:["the cxt walks"],start:[0,0],expected:["the cat walks"],requiredMode:'normal',goal:"Replace the <b>x</b> in <b>kxt</b> with <b>a</b>."},
+    {lines:["the big tr0e"],start:[0,0],expected:["the big tree"],requiredMode:'normal',goal:"Replace the <b>0</b> in <b>b0om</b> with <b>o</b>."},
+    {lines:["the mXon shines"],start:[0,0],expected:["the moon shines"],requiredMode:'normal',goal:"Replace the <b>X</b> in <b>mXan</b> with <b>a</b>."},
+    {lines:["the gr0en forest"],start:[0,0],expected:["the green forest"],requiredMode:'normal',goal:"Replace the <b>0</b> in <b>gr0ene</b> with <b>o</b>."}
   ],
   '13':[
-    {lines:["de kleine draak"],start:[0,0],expected:["de grote draak"],requiredMode:'normal',goal:"Replace <b>kleine</b> with <b>grote</b>."},
-    {lines:["een oude zin"],start:[0,0],expected:["een volledig nieuwe zin"],requiredMode:'normal',goal:"Replace the entire first line with <b>een volledig nieuwe zin</b>."},
-    {lines:["de maan is blauw"],start:[0,0],expected:["de maan is helder"],requiredMode:'normal',goal:"Replace <b>blauw</b> with <b>helder</b>."},
-    {lines:["een slome schildpad"],start:[0,0],expected:["een snelle schildpad"],requiredMode:'normal',goal:"Replace <b>slome</b> with <b>snelle</b>."}
+    {lines:["the small dragon"],start:[0,0],expected:["the large dragon"],requiredMode:'normal',goal:"Replace <b>kleine</b> with <b>grote</b>."},
+    {lines:["an old sentence"],start:[0,0],expected:["a completely new sentence"],requiredMode:'normal',goal:"Replace the entire first line with <b>a completely new sentence</b>."},
+    {lines:["the moon is blue"],start:[0,0],expected:["the moon is bright"],requiredMode:'normal',goal:"Replace <b>blauw</b> with <b>helder</b>."},
+    {lines:["a slow turtle"],start:[0,0],expected:["a fast turtle"],requiredMode:'normal',goal:"Replace <b>slome</b> with <b>snelle</b>."}
   ],
   '14':[
-    {lines:["de draak slaapt"],start:[0,0],expected:["de draak slaapt","de draak slaapt"],requiredMode:'normal',goal:"Place <b>de draak slaapt</b> twee keer onder elkaar."},
-    {lines:["een gouden sleutel"],start:[0,0],expected:["een gouden sleutel","een gouden sleutel"],requiredMode:'normal',goal:"Create a second line containing exactly <b>een gouden sleutel</b>."},
-    {lines:["het bos is stil"],start:[0,0],expected:["het bos is stil","het bos is stil"],requiredMode:'normal',goal:"Create a copy of the first line on the line eroundr."},
-    {lines:["de reis begint"],start:[0,0],expected:["de reis begint","de reis begint"],requiredMode:'normal',goal:"Place <b>de reis begint</b> twee keer onder elkaar."}
+    {lines:["the dragon sleeps"],start:[0,0],expected:["the dragon sleeps","the dragon sleeps"],requiredMode:'normal',goal:"Place <b>the dragon sleeps</b> twice, one below the other."},
+    {lines:["a golden key"],start:[0,0],expected:["a golden key","a golden key"],requiredMode:'normal',goal:"Create a second line containing exactly <b>a golden key</b>."},
+    {lines:["the forest is quiet"],start:[0,0],expected:["the forest is quiet","the forest is quiet"],requiredMode:'normal',goal:"Create a copy of the first line on the line below."},
+    {lines:["the journey begins"],start:[0,0],expected:["the journey begins","the journey begins"],requiredMode:'normal',goal:"Place <b>the journey begins</b> twice, one below the other."}
   ],
   '06':[
         {lines:['never give up'],start:[0,0],setup:'deleteLast',expected:['never give up'],goal:'Restore the originele tekst <b>never give up</b>.'},
@@ -438,58 +438,58 @@ const EXTRA_ROUNDS={
     {lines:['find ....... % secret'],start:[0,0],target:[0,13],goal:'Reach the character <b>%</b>.'}
   ],
   '17':[
-        {lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',goal:'Delete the corrupte line and herstel <b>WARRIOR</b>.'},
-    {lines:['MISSION START','BROKEN LINE','VICTORY IS YOUR'],start:[1,0],expected:['MISSION START','VICTORY IS YOURS'],requiredMode:'normal',goal:'Delete <b>BROKEN LINE</b> and herstel <b>YOURS</b>.'},
+        {lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',goal:'Delete the corrupte line and restore <b>WARRIOR</b>.'},
+    {lines:['MISSION START','BROKEN LINE','VICTORY IS YOUR'],start:[1,0],expected:['MISSION START','VICTORY IS YOURS'],requiredMode:'normal',goal:'Delete <b>BROKEN LINE</b> and restore <b>YOURS</b>.'},
     {lines:['NEOVIM READY','DELETE ME','SKILL UNLOCK'],start:[1,0],expected:['NEOVIM READY','SKILL UNLOCKED'],requiredMode:'normal',goal:'Delete <b>DELETE ME</b> and complete <b>UNLOCKED</b>.'},
     {lines:['FINAL TRIAL','CORRUPT','KEYBOARD WARR'],start:[1,0],expected:['FINAL TRIAL','KEYBOARD WARRIOR'],requiredMode:'normal',goal:'Delete <b>CORRUPT</b> and voltooi <b>WARRIOR</b>.'}
   ],
   '01':[
         {lines:['. . . . . . .','. . . . . . .','. . . . . X .','. . . . . . .'],start:[0,0],target:[2,10],goal:'Reach the <b>X</b> on line 3.'},
-    {lines:['. . . . X . .','. . . . . . .','. . . . . . .'],start:[2,12],target:[0,8],goal:'Go vanaf rechtsonder naar the <b>X</b> linksboven.'},
+    {lines:['. . . . X . .','. . . . . . .','. . . . . . .'],start:[2,12],target:[0,8],goal:'Go from the bottom-right to the <b>X</b> at the top-left.'},
     {lines:['. . . . . . .','. . X . . . .','. . . . . . .','. . . . . . .'],start:[3,0],target:[1,4],goal:'Reach the <b>X</b> on line 2.'},
-    {lines:['. . . . . . .','. . . . . . .','. . . . . . .','. . . . . . X'],start:[0,12],target:[3,12],goal:'Navigate naar the <b>X</b> rechtsonder.'}
+    {lines:['. . . . . . .','. . . . . . .','. . . . . . .','. . . . . . X'],start:[0,12],target:[3,12],goal:'Navigate to the <b>X</b> at the bottom-right.'}
   ],
   '03':[
         {lines:['the terminal belongs to you!'],start:[0,3],target:[0,27],goal:'Reach the <b>!</b> at the end of the line.'},
     {lines:['START then find your way back'],start:[0,19],target:[0,0],goal:'Reach the <b>S</b> at the start of the line.'},
     {lines:['an entire line ends here!'],start:[0,0],target:[0,24],goal:'Reach the last <b>!</b>.'},
-    {lines:['first steps make a warrior'],start:[0,25],target:[0,0],goal:'Return naar the first letter <b>f</b>.'}
+    {lines:['first steps make a warrior'],start:[0,25],target:[0,0],goal:'Return to the first letter <b>f</b>.'}
   ],
   '04':[
-        {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on the last regel.'},
-    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Reach the <b>X</b> on the first regel.'},
+        {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on the last line.'},
+    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Reach the <b>X</b> on the first line.'},
     {lines:['alpha','beta','X on line three','delta','omega'],start:[0,0],target:[2,0],goal:'Reach the <b>X</b> on line <b>3</b>.'},
     {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on line <b>5</b>.'}
   ],
   '05':[
-    {lines:["een oude kaart","de draak is groot"],start:[0,0],expected:["een oude kaart","de blauwe draak is groot"],requiredMode:'normal',goal:"Insert <b>blauwe </b> before <b>draak</b> on line 2."},
-    {lines:["de weg is lang","een kat slaapt"],start:[0,0],expected:["de weg is lang","een katje slaapt"],requiredMode:'normal',goal:"Insert <b>je</b> after <b>kat</b> on line 2."},
-    {lines:["een open deur","de grote toren"],start:[0,0],expected:["een open deur","de zeer grote toren"],requiredMode:'normal',goal:"Insert <b>zeer </b> before <b>grote</b> on line 2."},
-    {lines:["de first stap","een held loopt"],start:[0,0],expected:["de first stap","een held loopt snel"],requiredMode:'normal',goal:"Insert <b> snel</b> after <b>loopt</b> on line 2."}
+    {lines:["an old map","de draak is groot"],start:[0,0],expected:["an old map","the blue dragon is large"],requiredMode:'normal',goal:"Insert <b>blauwe </b> before <b>draak</b> on line 2."},
+    {lines:["the road is long","a cat sleeps"],start:[0,0],expected:["the road is long","a kitten sleeps"],requiredMode:'normal',goal:"Insert <b>je</b> after <b>kat</b> on line 2."},
+    {lines:["an open door","the tall tower"],start:[0,0],expected:["an open door","the very tall tower"],requiredMode:'normal',goal:"Insert <b>zeer </b> before <b>grote</b> on line 2."},
+    {lines:["the first step","a hero walks"],start:[0,0],expected:["the first step","a hero walks snel"],requiredMode:'normal',goal:"Insert <b> snel</b> after <b>loopt</b> on line 2."}
   ],
   '07':[
-    {lines:["een stille nacht","  maan schijnt"],start:[0,0],expected:["een stille nacht","  the maan schijnt"],requiredMode:'normal',goal:"Insert <b>de </b> before <b>maan</b> on line 2. Keep the twee beginspaties."},
-    {lines:["een lange reis","de held loopt"],start:[0,0],expected:["een lange reis","de held loopt!"],requiredMode:'normal',goal:"Insert <b>!</b> at the end of line 2."},
-    {lines:["het grote boek","    verhaal begint"],start:[0,0],expected:["het grote boek","    the verhaal begint"],requiredMode:'normal',goal:"Insert <b>het </b> before <b>verhaal</b> on line 2. Keep the vier beginspaties."},
-    {lines:["het first licht","de dag begint","een vogel zingt"],start:[0,0],expected:["het first licht","de dag begint","een vogel zingt."],requiredMode:'normal',goal:"Insert <b>.</b> at the end of line 3."}
+    {lines:["a silent night","  moon shines"],start:[0,0],expected:["a silent night","  the maan schijnt"],requiredMode:'normal',goal:"Insert <b>de </b> before <b>maan</b> on line 2. Keep the twee beginspaties."},
+    {lines:["a long journey","de held loopt"],start:[0,0],expected:["a long journey","de held loopt!"],requiredMode:'normal',goal:"Insert <b>!</b> at the end of line 2."},
+    {lines:["the big book","    story begins"],start:[0,0],expected:["the big book","    the verhaal begint"],requiredMode:'normal',goal:"Insert <b>het </b> before <b>verhaal</b> on line 2. Keep the vier beginspaties."},
+    {lines:["the first light","the day begins","a bird sings"],start:[0,0],expected:["the first light","the day begins","a bird sings."],requiredMode:'normal',goal:"Insert <b>.</b> at the end of line 3."}
   ],
   '08':[
-    {lines:["de weg begint","de weg eindigt"],start:[0,0],expected:["de weg begint","de brug verschijnt","de weg eindigt"],requiredMode:'normal',goal:"Insert a new line <b>de brug verschijnt</b> between the twee regels."},
-    {lines:["het avontuur","de held vertrekt"],start:[0,0],expected:["het avontuur","de kaart ligt klaar","de held vertrekt"],requiredMode:'normal',goal:"Insert a new line <b>de kaart ligt klaar</b> above <b>de held vertrekt</b>."},
-    {lines:["een lege zaal","de first gast","de third gast"],start:[0,0],expected:["een lege zaal","de first gast","de second gast","de third gast"],requiredMode:'normal',goal:"Insert a new line <b>de second gast</b> between the twee gasten."},
-    {lines:["het kasteel","de poort sluit"],start:[0,0],expected:["het kasteel","de poort opent","de poort sluit"],requiredMode:'normal',goal:"Insert a new line <b>de poort opent</b> above <b>de poort sluit</b>."}
+    {lines:["the road begins","the road ends"],start:[0,0],expected:["the road begins","the bridge appears","the road ends"],requiredMode:'normal',goal:"Insert a new line <b>the bridge appears</b> between the twee regels."},
+    {lines:["the adventure","the hero departs"],start:[0,0],expected:["the adventure","the map is ready","the hero departs"],requiredMode:'normal',goal:"Insert a new line <b>the map is ready</b> above <b>the hero departs</b>."},
+    {lines:["an empty hall","the first guest","the third guest"],start:[0,0],expected:["an empty hall","the first guest","the second guest","the third guest"],requiredMode:'normal',goal:"Insert a new line <b>the second guest</b> between the twee gasten."},
+    {lines:["the castle","the gate closes"],start:[0,0],expected:["the castle","the gate opens","the gate closes"],requiredMode:'normal',goal:"Insert a new line <b>the gate opens</b> above <b>the gate closes</b>."}
   ],
   '09':[
     {lines:["de wind waait","de draakk vliegt"],start:[0,0],expected:["de wind waait","de draak vliegt"],requiredMode:'normal',goal:"Delete one extra <b>k</b> uit <b>draakk</b> on line 2."},
-    {lines:["het bos leeft","een sterr schijnt"],start:[0,0],expected:["het bos leeft","een ster schijnt"],requiredMode:'normal',goal:"Delete one extra <b>r</b> uit <b>sterr</b> on line 2."},
-    {lines:["de kaart ligt","het zwaardd blinkt"],start:[0,0],expected:["de kaart ligt","het zwaard blinkt"],requiredMode:'normal',goal:"Delete one extra <b>d</b> uit <b>zwaardd</b> on line 2."},
-    {lines:["de held rust","een bloemm groeit"],start:[0,0],expected:["de held rust","een bloem groeit"],requiredMode:'normal',goal:"Delete one extra <b>m</b> uit <b>bloemm</b> on line 2."}
+    {lines:["the forest lives","a starr shines"],start:[0,0],expected:["the forest lives","a star shines"],requiredMode:'normal',goal:"Delete one extra <b>r</b> uit <b>sterr</b> on line 2."},
+    {lines:["the map lies","the swordd shines"],start:[0,0],expected:["the map lies","the sword shines"],requiredMode:'normal',goal:"Delete one extra <b>d</b> uit <b>zwaardd</b> on line 2."},
+    {lines:["the hero rests","a flowerr grows"],start:[0,0],expected:["the hero rests","a flower grows"],requiredMode:'normal',goal:"Delete one extra <b>m</b> uit <b>bloemm</b> on line 2."}
   ],
   '10':[
-    {lines:["de kleine draak slaapt"],start:[0,0],expected:["de draak slaapt"],requiredMode:'normal',goal:"Delete <b>kleine </b> from line 1."},
-    {lines:["een vuurBUG!"],start:[0,0],expected:["een vuur!"],requiredMode:'normal',goal:"Delete <b>BUG</b> from line 1, maar keep <b>!</b>."},
+    {lines:["the small dragon slaapt"],start:[0,0],expected:["the dragon sleeps"],requiredMode:'normal',goal:"Delete <b>kleine </b> from line 1."},
+    {lines:["a fireBUG!"],start:[0,0],expected:["a fire!"],requiredMode:'normal',goal:"Delete <b>BUG</b> from line 1, maar keep <b>!</b>."},
     {lines:["de held draagt a zware tas"],start:[0,0],expected:["de held draagt a tas"],requiredMode:'normal',goal:"Delete <b>zware </b> from line 1."},
-    {lines:["de schatFAKE!"],start:[0,0],expected:["de schat!"],requiredMode:'normal',goal:"Delete <b>FAKE</b> from line 1, maar keep <b>!</b>."}
+    {lines:["the treasureFAKE!"],start:[0,0],expected:["the treasure!"],requiredMode:'normal',goal:"Delete <b>FAKE</b> from line 1, maar keep <b>!</b>."}
   ]
 };
 // Every level has a dedicated key-learning screen, followed by a quest briefing.
