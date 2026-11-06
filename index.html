@@ -17,7 +17,7 @@
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <script>
 'use strict';
-const APP_VERSION = '1.10.3'; // Update bij iedere release; deze waarde voedt the header.
+const APP_VERSION = '1.10.3'; // Update for every release; displayed in the header.
 document.getElementById('appVersion').textContent = 'V' + APP_VERSION;
 
 // v1.5.0: isolated, reproducible quest-generation foundation.
@@ -238,7 +238,7 @@ function generateDynamicDeleteRound(kind,seed,round){
    [[a+' '+b+' '+c],[a+' '+c],'Delete '+b+' including the space after it on line 1.','dw'],
    [[a+' '+b+c+'!'],[a+' '+b+'!'],'Delete only '+c+' directly after '+b+' on line 1. Keep the exclamation mark.','de'],
    [[a+' '+b,c+' '+d+' '+e,f+' '+g],[a+' '+b,c+' '+e,f+' '+g],'Delete '+d+' including the space after it on line 2.','dw'],
-   [[a+' '+b,c+' '+d+' '+e,f+' '+g+h+'!'],[a+' '+b,c+' '+e,f+' '+g+'!'],'Delete '+d+' including the space after it on line 2, and verwijder only '+h+' directly after '+g+' on line 3. Keep the exclamation mark.','combine']
+   [[a+' '+b,c+' '+d+' '+e,f+' '+g+h+'!'],[a+' '+b,c+' '+e,f+' '+g+'!'],'Delete '+d+' including the space after it on line 2, and delete only '+h+' directly after '+g+' on line 3. Keep the exclamation mark.','combine']
   ];
   [lines,expected,goal,focus]=options[round];
  }else if(kind==='line-delete'){
@@ -246,7 +246,7 @@ function generateDynamicDeleteRound(kind,seed,round){
    [[a,b,c],[a,c],'Delete the entire line 2 with '+b+'.','dd'],
    [[a+' '+b,c+' '+d+' '+e],[a+' '+b,c+' '+d],'Delete the space and '+e+' at the end of line 2. Keep '+c+' '+d+'.','D'],
    [[a,b,c,d],[a,b,d],'Delete the entire line 3 with '+c+'.','dd'],
-   [[a,b+' '+c+' '+d,e,f],[a,b+' '+c,f],'Delete the space and '+d+' at the end of line 2, and verwijder the entire line 3 with '+e+'.','combine']
+   [[a,b+' '+c+' '+d,e,f],[a,b+' '+c,f],'Delete the space and '+d+' at the end of line 2, and delete the entire line 3 with '+e+'.','combine']
   ];
   [lines,expected,goal,focus]=options[round];
  }else throw Error('Unknown delete generator: '+kind);
@@ -266,7 +266,7 @@ function generateUtilityRound(kind,seed,round){
    [[a,b],[a,b,a],'Insert a copy of line 1 ('+a+') directly below line 2.','yy,p'],
    [[a,b,c],[a,b,c,b],'Insert a copy of line 2 ('+b+') directly below line 3.','yy,p'],
    [[a,b,c,d],[a,c,b,c,d],'Insert a copy of line 3 ('+c+') directly below line 1. Keep all existing lines.','yy,p'],
-   [[a,b,c,d],[a,b,a,c,d,c],'Insert a copy of line 1 ('+a+') directly below line 2 toe and voeg a copy of the original line 3 ('+c+') directly below the original line 4.','combine']
+   [[a,b,c,d],[a,b,a,c,d,c],'Insert a copy of line 1 ('+a+') directly below line 2 and insert a copy of the original line 3 ('+c+') directly below the original line 4.','combine']
   ];
   [lines,expected,goal,focus]=cases[round];
  }else if(kind==='undo'){
@@ -352,7 +352,7 @@ function generateNavigationRound(kind,seed,round){
   if(round===0){lines=[a,b,c];expected=[a,c];goal='Delete the entire line 2 ('+b+').';focus='dd'}
   else if(round===1){lines=[a+' '+b,c+'#'+d,e+' '+f];expected=[a+' '+b,c+d,e+' '+f];goal='Delete the character # between '+c+' and '+d+' on line 2.';focus='x'}
   else if(round===2){lines=[a,b+' '+c,d];expected=[a,b+' '+c,e,d];goal='Insert a new line with only '+e+' directly below line 2.';focus='o'}
-  else{lines=[a+' '+b,c,d+'#'+e,f+' '+g];expected=[a+' '+b,d+e,f+' '+g+' '+h];goal='Delete the entire line 2 ('+c+'), verwijder the # between '+d+' and '+e+' on the new line 2, and voeg exactly one spatie followed by '+h+' at the end of the last line.';focus='prove'}
+  else{lines=[a+' '+b,c,d+'#'+e,f+' '+g];expected=[a+' '+b,d+e,f+' '+g+' '+h];goal='Delete the entire line 2 ('+c+'), verwijder the # between '+d+' and '+e+' on the new line 2, and insert exactly one spatie followed by '+h+' at the end of the last line.';focus='prove'}
  }else throw Error('Unknown navigation generator '+kind);
  if(!expected)expected=[...lines];
  const ex={generatorVersion:QUEST_GENERATOR_VERSION,seed:String(seed),skill:kind==='final-boss'?'mastery':'movement',difficulty:phase.difficulty,round,roundType:phase.id,lines,start:[0,0],expected,requiredMode:'normal',goal,focus,metadata:{solutionKind:kind}};
@@ -397,9 +397,9 @@ const LEVELS=[
 const EXTRA_ROUNDS={
   '11':[
     {lines:["bewaar deze regel","VERWIJDER DEZE REGEL","en bewaar deze ook"],start:[0,0],expected:["bewaar deze regel","en bewaar deze ook"],requiredMode:'normal',goal:"Delete the entire line <b>VERWIJDER DEZE REGEL</b>."},
-    {lines:["het kasteel staat VERWIJDER DIT"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Delete <b> VERWIJDER DIT</b> uit line 1."},
+    {lines:["het kasteel staat VERWIJDER DIT"],start:[0,0],expected:["het kasteel staat"],requiredMode:'normal',goal:"Delete <b> VERWIJDER DIT</b> from line 1."},
     {lines:["DIT MAG WEG","de reis begint"],start:[0,0],expected:["de reis begint"],requiredMode:'normal',goal:"Delete the entire first line <b>DIT MAG WEG</b>."},
-    {lines:["de maan schijnt EXTRA TEKST"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Delete <b> EXTRA TEKST</b> uit line 1."}
+    {lines:["de maan schijnt EXTRA TEKST"],start:[0,0],expected:["de maan schijnt"],requiredMode:'normal',goal:"Delete <b> EXTRA TEKST</b> from line 1."}
   ],
   '12':[
     {lines:["de kxt loopt"],start:[0,0],expected:["de kat loopt"],requiredMode:'normal',goal:"Replace the <b>x</b> in <b>kxt</b> with <b>a</b>."},
@@ -416,7 +416,7 @@ const EXTRA_ROUNDS={
   '14':[
     {lines:["de draak slaapt"],start:[0,0],expected:["de draak slaapt","de draak slaapt"],requiredMode:'normal',goal:"Place <b>de draak slaapt</b> twee keer onder elkaar."},
     {lines:["een gouden sleutel"],start:[0,0],expected:["een gouden sleutel","een gouden sleutel"],requiredMode:'normal',goal:"Create a second line containing exactly <b>een gouden sleutel</b>."},
-    {lines:["het bos is stil"],start:[0,0],expected:["het bos is stil","het bos is stil"],requiredMode:'normal',goal:"Create a copy of the first line op the line eroundr."},
+    {lines:["het bos is stil"],start:[0,0],expected:["het bos is stil","het bos is stil"],requiredMode:'normal',goal:"Create a copy of the first line on the line eroundr."},
     {lines:["de reis begint"],start:[0,0],expected:["de reis begint","de reis begint"],requiredMode:'normal',goal:"Place <b>de reis begint</b> twee keer onder elkaar."}
   ],
   '06':[
@@ -426,7 +426,7 @@ const EXTRA_ROUNDS={
     {lines:['mission complete'],start:[0,0],setup:'deleteLast',expected:['mission complete'],goal:'Restore <b>mission complete</b>.'}
   ],
   '15':[
-        {lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],goal:'Find <b>shadow</b> and bereik the first letter.'},
+        {lines:['the forest is quiet','the river is cold','a hidden shadow waits','the treasure is near'],start:[0,0],target:[2,9],goal:'Find <b>shadow</b> and reach the first letter.'},
     {lines:['the portal is shut','a mighty dragon sleeps','the stars are bright'],start:[0,0],target:[1,9],goal:'Find <b>dragon</b>.'},
     {lines:['read the map','cross the river','find the crystal here','return home'],start:[0,0],target:[2,9],goal:'Find <b>crystal</b>.'},
     {lines:['the key is hidden','watch the entrance','unlock the vault','collect the prize'],start:[0,0],target:[2,11],goal:'Find <b>vault</b>.'}
@@ -440,7 +440,7 @@ const EXTRA_ROUNDS={
   '17':[
         {lines:['QUEST COMPLETE','CORRUPTED DATA','YOU ARE A VIM WARR'],start:[1,0],expected:['QUEST COMPLETE','YOU ARE A VIM WARRIOR'],requiredMode:'normal',goal:'Delete the corrupte line and herstel <b>WARRIOR</b>.'},
     {lines:['MISSION START','BROKEN LINE','VICTORY IS YOUR'],start:[1,0],expected:['MISSION START','VICTORY IS YOURS'],requiredMode:'normal',goal:'Delete <b>BROKEN LINE</b> and herstel <b>YOURS</b>.'},
-    {lines:['NEOVIM READY','DELETE ME','SKILL UNLOCK'],start:[1,0],expected:['NEOVIM READY','SKILL UNLOCKED'],requiredMode:'normal',goal:'Delete <b>DELETE ME</b> and maak <b>UNLOCKED</b>.'},
+    {lines:['NEOVIM READY','DELETE ME','SKILL UNLOCK'],start:[1,0],expected:['NEOVIM READY','SKILL UNLOCKED'],requiredMode:'normal',goal:'Delete <b>DELETE ME</b> and complete <b>UNLOCKED</b>.'},
     {lines:['FINAL TRIAL','CORRUPT','KEYBOARD WARR'],start:[1,0],expected:['FINAL TRIAL','KEYBOARD WARRIOR'],requiredMode:'normal',goal:'Delete <b>CORRUPT</b> and voltooi <b>WARRIOR</b>.'}
   ],
   '01':[
@@ -456,8 +456,8 @@ const EXTRA_ROUNDS={
     {lines:['first steps make a warrior'],start:[0,25],target:[0,0],goal:'Return naar the first letter <b>f</b>.'}
   ],
   '04':[
-        {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> op the last regel.'},
-    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Reach the <b>X</b> op the first regel.'},
+        {lines:['start','through the mist','past the mountain','across the river','X marks the end'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on the last regel.'},
+    {lines:['X marks the start','below the clouds','under the bridge','at the bottom'],start:[3,0],target:[0,0],goal:'Reach the <b>X</b> on the first regel.'},
     {lines:['alpha','beta','X on line three','delta','omega'],start:[0,0],target:[2,0],goal:'Reach the <b>X</b> on line <b>3</b>.'},
     {lines:['north','east','south','west','X on line five','beyond'],start:[0,0],target:[4,0],goal:'Reach the <b>X</b> on line <b>5</b>.'}
   ],
@@ -486,10 +486,10 @@ const EXTRA_ROUNDS={
     {lines:["de held rust","een bloemm groeit"],start:[0,0],expected:["de held rust","een bloem groeit"],requiredMode:'normal',goal:"Delete one extra <b>m</b> uit <b>bloemm</b> on line 2."}
   ],
   '10':[
-    {lines:["de kleine draak slaapt"],start:[0,0],expected:["de draak slaapt"],requiredMode:'normal',goal:"Delete <b>kleine </b> uit line 1."},
-    {lines:["een vuurBUG!"],start:[0,0],expected:["een vuur!"],requiredMode:'normal',goal:"Delete <b>BUG</b> uit line 1, maar keep <b>!</b>."},
-    {lines:["de held draagt a zware tas"],start:[0,0],expected:["de held draagt a tas"],requiredMode:'normal',goal:"Delete <b>zware </b> uit line 1."},
-    {lines:["de schatFAKE!"],start:[0,0],expected:["de schat!"],requiredMode:'normal',goal:"Delete <b>FAKE</b> uit line 1, maar keep <b>!</b>."}
+    {lines:["de kleine draak slaapt"],start:[0,0],expected:["de draak slaapt"],requiredMode:'normal',goal:"Delete <b>kleine </b> from line 1."},
+    {lines:["een vuurBUG!"],start:[0,0],expected:["een vuur!"],requiredMode:'normal',goal:"Delete <b>BUG</b> from line 1, maar keep <b>!</b>."},
+    {lines:["de held draagt a zware tas"],start:[0,0],expected:["de held draagt a tas"],requiredMode:'normal',goal:"Delete <b>zware </b> from line 1."},
+    {lines:["de schatFAKE!"],start:[0,0],expected:["de schat!"],requiredMode:'normal',goal:"Delete <b>FAKE</b> from line 1, maar keep <b>!</b>."}
   ]
 };
 // Every level has a dedicated key-learning screen, followed by a quest briefing.
@@ -810,7 +810,7 @@ function showGeneratorLab(seedValue,skillValue='insert',difficultyValue='beginne
 
 }
 
-function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>The Command Grimoire</h3><p>Dit is a oefensimulator voor the belangrijkste Vim-keys. Je gebruikt hem volledig with the keysbord. Click the editor of close this window om verder te spelen.</p><div class="helpgrid"><div><span class="key">h j k l</span> movement</div><div><span class="key">w b e</span> words</div><div><span class="key">0 $</span> line boundaries</div><div><span class="key">gg G</span> file navigation</div><div><span class="key">i a I A o O</span> insert</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw the dd D</span> delete</div><div><span class="key">dd</span> delete line</div><div><span class="key">yy p</span> copy/paste</div><div><span class="key">u</span> undo</div><div><span class="key">/word ↵</span> search</div><div><span class="key">n</span> next match</div><div><span class="key">r s cw cc C</span> change</div><div><span class="key">:%s/a/b/ ↵</span> substitute throughout the file</div><div><span class="key">fX</span> find character</div></div><p>Scoring: 100 base XP + up to 300 for efficiency + up to 100 voor a schone run, minus 75 per hint. Extra keys above the referentie kosten 12 XP per toets. Only your best score per level counts toward your total XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
+function showHelp(){introStage='';showModal(`<div class="eyebrow">VI QUEST FIELD MANUAL</div><h3>The Command Grimoire</h3><p>This simulator teaches essential Vim commands. Play entirely with the keyboard. Click the editor or close this window to continue.</p><div class="helpgrid"><div><span class="key">h j k l</span> movement</div><div><span class="key">w b e</span> word motions</div><div><span class="key">0 $</span> line boundaries</div><div><span class="key">gg G</span> file navigation</div><div><span class="key">i a I A o O</span> insert</div><div><span class="key">Esc</span> normal mode</div><div><span class="key">x X dw de dd D</span> delete</div><div><span class="key">dd</span> delete line</div><div><span class="key">yy p</span> copy/paste</div><div><span class="key">u</span> undo</div><div><span class="key">/word ↵</span> search</div><div><span class="key">n</span> next match</div><div><span class="key">r s cw cc C</span> change</div><div><span class="key">:%s/a/b/ ↵</span> substitute throughout the file</div><div><span class="key">fX</span> find character</div></div><p>Scoring: 100 base XP + up to 300 efficiency XP + up to 100 clean-run XP, minus 75 XP per hint. Each extra key above the reference costs 12 XP. Only your best score per level counts toward your total XP.</p><div class="modalactions"><button class="btn primary" id="helpClose">BACK TO QUEST</button></div>`);$('helpClose').onclick=closeModal}
 function showBoard(){introStage='';let sorted=totalBoard();showModal(`<div class="eyebrow">THIS BROWSER ONLY</div><h3>Hall of Keystrokes</h3><p>Highest total XP per player on this device. No accounts, cloud sync, or shared scores.</p><div style="max-height:330px;overflow:auto">${sorted.length?'<table class="leader">'+sorted.slice(0,50).map((b,i)=>`<tr><td>#${i+1}</td><td>${escapeHtml(b.name)}</td><td>${b.levels} levels</td><td>${b.score} XP</td></tr>`).join('')+'</table>':'<p class="empty">No scores yet.</p>'}</div><div class="modalactions"><button class="btn" id="exportBtn">EXPORT JSON</button><button class="btn primary" id="boardClose">CLOSE</button></div>`);$('boardClose').onclick=closeModal;$('exportBtn').onclick=()=>{const payload={version:2,scoringVersion:'1.10.2',exportedAt:new Date().toISOString(),profile:data,leaderboard:board};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='vi-quest-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}}
 function showFinal(){introStage='';showModal(`<div class="eyebrow">ALL TRIALS COMPLETED</div><h3>YOU ARE A KEYBOARD WARRIOR.</h3><p>All ${LEVELS.length} levels complete. Your score: <strong style="color:var(--lime)">${Object.values(data.bests).reduce((a,b)=>a+b,0)} XP</strong>. Replay levels to improve your efficiency and high score. Coming next: accounts and the global leaderboard.</p><div class="modalactions"><button class="btn primary" id="finalClose">BACK TO QUEST</button></div>`);$('finalClose').onclick=closeModal}
 $('editor').addEventListener('keydown',inputKey);$('editor').addEventListener('focus',()=>$('focusState').textContent='KEYBOARD ACTIVE');$('editor').addEventListener('blur',()=>$('focusState').textContent='CLICK TO FOCUS');$('editor').addEventListener('mousedown',e=>{e.preventDefault();$('editor').focus()});$('generatorBtn').onclick=()=>showGeneratorLab('demo-001');$('helpBtn').onclick=showHelp;$('renameBtn').onclick=()=>showProfile();$('boardBtn').onclick=showBoard;$('resetBtn').onclick=()=>loadLevel(idx);$('hintBtn').onclick=()=>{if(finished)return;hintCount++;roundHints++;notice('HINT: '+LEVELS[idx].hint);render()};$('overlay').addEventListener('mousedown',e=>{if(e.target===$('overlay')&&data.name&&!introStage)closeModal()});// Keyboard-first dialogs: Enter activates exactly the visible green primary action.
